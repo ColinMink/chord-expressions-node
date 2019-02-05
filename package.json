@@ -6,9 +6,24 @@
   "scripts": {
     "test": "test"
   },
-  "author": "",
+  "author": "Colin Mink, Roberto Garcia",
   "license": "ISC",
   "dependencies": {
     "pegjs": "^0.10.0"
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ColinMink/Chord-Expressions.git"
+  },
+  "keywords": [
+    "chords",
+    "music"
+  ],
+  "bugs": {
+    "url": "https://github.com/ColinMink/Chord-Expressions/issues"
+  },
+  "homepage": "https://github.com/ColinMink/Chord-Expressions#readme"
 }
