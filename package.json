@@ -1,0 +1,14 @@
+{
+  "name": "chord-expressions",
+  "version": "1.0.0",
+  "description": "Parser and manipulate chords",
+  "main": "lib/resources/chord.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pegjs": "^0.10.0"
+  }
+}
