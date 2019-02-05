@@ -2,13 +2,16 @@
   "name": "chord-expressions",
   "version": "1.0.0",
   "description": "Parser and manipulate chords",
-  "main": "lib/resources/chord.js",
+  "main": "index.js",
   "scripts": {
-    "test": "test"
+
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "pegjs": "^0.10.0"
+  },
+  "devDependencies": {
+    "jasmine": "^3.3.1"
   }
 }
