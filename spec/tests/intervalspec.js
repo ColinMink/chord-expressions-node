@@ -4,14 +4,15 @@ const interval = require(path.resolve(__dirname,'../../lib/resources/interval.js
 describe("Interval suite",function(){
     it("fromName",function(){
         let int = interval.fromName('b2');
-        //expect(true).toBe(true);
         expect(int.name).toBe("b2");
         expect(int.value).toBe(1);
+        expect(function(){interval.fromName('h2')}).toThrow();
     });
     it("fromValue",function(){
         let int = interval.fromValue(1);
         expect(int.name).toBe("b2");
         expect(int.value).toBe(1);
+        expect(function(){interval.fromValue(14)}).toThrow();
     });
 
     it("getSum",function(){
@@ -63,5 +64,6 @@ describe("Interval suite",function(){
     it("normalizeIntervalValue",function(){
         expect(interval.normalizeIntervalValue(15)).toBe(3);
         expect(interval.normalizeIntervalValue(25)).toBe(1);
+        expect(interval.normalizeIntervalValue(-1)).toBe(11);
     });
 });
