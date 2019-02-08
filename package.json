@@ -3,22 +3,30 @@
   "version": "1.0.0",
   "description": "Parser and manipulate chords",
   "url": "https://github.com/ColinMink/Chord-Expressions",
-  "bugs":"https://github.com/ColinMink/Chord-Expressions/issues",
+  "bugs": {
+    "url": "https://github.com/ColinMink/Chord-Expressions/issues"
+  },
   "main": "./lib/resources/chord.js",
   "scripts": {
     "build": "pegjs ./lib/resources/parser/parser.pegjs"
   },
-  "contributors": ["Colin Mink (https://github.com/ColinMink)","Roberto Garcia (https://github.com/TylwythTeg)"],
+  "contributors": [
+    "Colin Mink (https://github.com/ColinMink)",
+    "Roberto Garcia (https://github.com/TylwythTeg)"
+  ],
   "license": "ISC",
   "repository": {
-    "type" : "git",
-    "url" : "github:ColinMink/Chord-Expressions"
+    "type": "git",
+    "url": "git+https://github.com/ColinMink/Chord-Expressions.git"
   },
-  "dependencies": {
-  
-  },
+  "dependencies": {},
   "devDependencies": {
     "jasmine": "^3.3.1",
     "pegjs": "^0.10.0"
-  }
+  },
+  "homepage": "https://github.com/ColinMink/Chord-Expressions#readme",
+  "directories": {
+    "lib": "lib"
+  },
+  "author": ""
 }
