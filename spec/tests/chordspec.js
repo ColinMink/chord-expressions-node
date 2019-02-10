@@ -51,7 +51,7 @@ describe("Chord suite",function(){
         
         ch = chord.chordFromNotation("Dmaj13");
         expect(ch.quality.triad).toBe("major");
-        expect(ch.quality.extension).toBe("13");
+        expect(ch.quality.extension).toBe("maj13");
         
         ch = chord.chordFromNotation("Dm6");
         expect(ch.quality.extension).toBe("6");
@@ -60,6 +60,10 @@ describe("Chord suite",function(){
         ch = chord.chordFromNotation("Dm-maj7");
         expect(ch.quality.extension).toBe("maj7");
         expect(ch.quality.triad).toBe("m");
+        
+        ch = chord.chordFromNotation("D#dim-maj11");
+        expect(ch.quality.extension).toBe("maj11");
+        expect(ch.quality.triad).toBe("dim");
         
         ch = chord.chordFromNotation("D+7");
         expect(ch.quality.extension).toBe("7");
@@ -75,10 +79,6 @@ describe("Chord suite",function(){
         
         ch = chord.chordFromNotation("Ddim9");
         expect(ch.quality.extension).toBe("9");
-        expect(ch.quality.triad).toBe("dim");
-        
-        ch = chord.chordFromNotation("D#dim-maj11");
-        expect(ch.quality.extension).toBe("maj11");
         expect(ch.quality.triad).toBe("dim");
         
         ch = chord.chordFromNotation("Dmaj11sus2");
