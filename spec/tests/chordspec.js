@@ -134,7 +134,47 @@ describe("Chord suite",function(){
         expect(ch.quality.extension).toBe("maj11");
         expect(ch.quality.triad).toBe("sus2");
         
+        // dim Seven 1,b3,b5,bb7 
+        ch = chord.chordFromNotation("Ddim7");
+        expect(ch.quality.extension).toBe("7");
+        expect(ch.quality.triad).toBe("dim");
         
+        // dim Seven 1,b3,b5,bb7 
+        ch = chord.chordFromNotation("Ddim7");
+        expect(ch.quality.extension).toBe("dim7"); // dim7 tells us the EXTENDED 7 is diminished
+        expect(ch.quality.triad).toBe("dim");
+        
+        // dim Seven 1,b3,b5,bb7 + extension
+        ch = chord.chordFromNotation("Ddim9");
+        expect(ch.quality.extension).toBe("dim9"); // dim9 tells us the 7 in the EXTENDED 9 is diminished
+        expect(ch.quality.triad).toBe("dim");
+        
+        // Half diminished Seven 1,b3,b5,b7
+        ch = chord.chordFromNotation("Dø7");
+        expect(ch.quality.extension).toBe("7");  // 7 tells us this 7 is dominant (b7)
+        expect(ch.quality.triad).toBe("dim");
+        
+        // Half diminished Seven 1,b3,b5,b7 + extension
+        ch = chord.chordFromNotation("Dø9");
+        expect(ch.quality.extension).toBe("9");  // 9 tells us this 7 is dominant (b7)
+        expect(ch.quality.triad).toBe("dim");
+        
+        // Half diminished Seven 1,b3,b5,b7 + extension
+        ch = chord.chordFromNotation("Dø11");
+        expect(ch.quality.extension).toBe("11");  // 11 tells us this 7 is dominant (b7)
+        expect(ch.quality.triad).toBe("dim");
+        
+        // Half diminished Seven 1,b3,b5,b7 + extension
+        ch = chord.chordFromNotation("Dø13");
+        expect(ch.quality.extension).toBe("13");  // 13 tells us this 7 is dominant (b7)
+        expect(ch.quality.triad).toBe("dim");
+        
+        // Half diminished char ø cannot be paired with maj(n)
+        expect(function(){chord.chordFromNotation("Dømaj9");}).toThrow();
+        
+    });
+    
+    it("Supports",function() {
         
     });
     
