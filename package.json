@@ -10,10 +10,14 @@
   "scripts": {
     "build": "pegjs ./lib/resources/parser/parser.pegjs"
   },
+<<<<<<< HEAD
   "contributors": [
     "Colin Mink (https://github.com/ColinMink)",
     "Roberto Garcia (https://github.com/TylwythTeg)"
   ],
+=======
+  "author": "Colin Mink, Roberto Garcia",
+>>>>>>> be66d005a79e4a2b5d50511651b5854d05488d24
   "license": "ISC",
   "repository": {
     "type": "git",
@@ -24,9 +28,27 @@
     "jasmine": "^3.3.1",
     "pegjs": "^0.10.0"
   },
+<<<<<<< HEAD
   "homepage": "https://github.com/ColinMink/Chord-Expressions#readme",
   "directories": {
     "lib": "lib"
   },
   "author": ""
+=======
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ColinMink/Chord-Expressions.git"
+  },
+  "keywords": [
+    "chords",
+    "music"
+  ],
+  "bugs": {
+    "url": "https://github.com/ColinMink/Chord-Expressions/issues"
+  },
+  "homepage": "https://github.com/ColinMink/Chord-Expressions#readme"
+>>>>>>> be66d005a79e4a2b5d50511651b5854d05488d24
 }
