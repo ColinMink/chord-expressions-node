@@ -1,5 +1,4 @@
-const path = require('path');
-const interval = require(path.resolve(__dirname,'../../lib/resources/interval.js'));
+const interval = require('../../index').Interval;
 
 describe("Interval suite",function(){
     it("fromName",function(){
