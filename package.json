@@ -6,7 +6,7 @@
   "bugs": {
     "url": "https://github.com/ColinMink/Chord-Expressions/issues"
   },
-  "main": "./lib/resources/chord.js",
+  "main": "index",
   "scripts": {
     "build": "pegjs ./lib/resources/parser/parser.pegjs"
   },

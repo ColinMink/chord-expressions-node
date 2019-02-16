@@ -1,5 +1,4 @@
-const path = require('path');
-const note = require(path.resolve(__dirname,'../../lib/resources/note.js'));
+const note = require('../../index').Note;
 /*
     it("",function(){
         
