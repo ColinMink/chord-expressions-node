@@ -41,10 +41,10 @@ describe("Chord suite",function(){
     it("Note Supports zero or more accidentals",function(){
         
         let ch = chord.chordFromNotation("D###m");
-        expect(ch.rootNote.name).toBe("F");
+        expect(ch.baseNote.name).toBe("F");
         
         ch = chord.chordFromNotation("Dbbbm");
-        expect(ch.rootNote.name).toBe("B");
+        expect(ch.baseNote.name).toBe("B");
     });
     
     it("Recognizes triad extensions",function(){
