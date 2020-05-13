@@ -8,7 +8,8 @@
   },
   "main": "index",
   "scripts": {
-    "build": "pegjs ./lib/resources/parser/parser.pegjs"
+    "build": "pegjs ./lib/resources/parser/parser.pegjs",
+    "test": "jasmine"
   },
   "contributors": [
     "Colin Mink (https://github.com/ColinMink)",
