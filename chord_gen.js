@@ -92,22 +92,13 @@ class Blueprint {
   createModified(intSymbol) {
       const copy = this.copy();
 
-      console.log("blueprint.createModified()");
-      console.log(copy.capabilities);
-
       replaceTheModifiedPureTone();
-      //  removeThisModFromCapabilities();
+      // TODO: Notice how some of these have side effects, some of them don't
       copy.capabilities.removeExactMod(intSymbol);
-      console.log(copy.capabilities);
-      // removeAssociatedAddFromCapabilities();
-      copy.capabilities.add = copy.capabilities.removeAddedTonesForMod(intSymbol); //TODO: remove addedTones for mod
-      console.log(copy.capabilities);
-      // removeAssociatedModsFromCapabilities();
+      copy.capabilities.add = copy.capabilities.removeAddedTonesForMod(intSymbol); 
       copy.capabilities.mod = copy.capabilities.removeAssociatedModsForMod(intSymbol);
-      copy.addToActiveModList(intSymbol)
-      // appendNewPureAddToneCapability();
+      copy.addToActiveModList(intSymbol);
       copy.capabilities.add = copy.capabilities.appendPureAddTone(intSymbol);
-      //generateChordNameAndSymbol();
       copy.sym = copy.generateSymbol();
       copy.name = copy.generateName();
       return new Blueprint(copy);
