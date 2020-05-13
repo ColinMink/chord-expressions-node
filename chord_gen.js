@@ -4,431 +4,503 @@ const Note = require('./lib/Note.js');
 const Interval = require('./lib/Interval.js');
 
 
-const Blueprint = {};
 
-Blueprint.copy = function(source) {
-    // Shallow copy
-    let blueprint = Object.assign({}, source);
 
-    // shallow copy internal properties
-    blueprint.activeAlterations = Alterations.copy(blueprint.activeAlterations);
-    blueprint.capabilities = Alterations.copy(blueprint.capabilities);
-    blueprint.intervals = [...source.intervals];
 
-    // blueprint.base is used to preserve the blueprint we started with (before any alterations)
-    // if it exists already then we just use that
-    // if it doesn't, then that can only be because we're the source blueprint
-    blueprint.base = blueprint.base || {
-        name: blueprint.name,
-        sym: blueprint.sym,
-        intervals: [...blueprint.intervals]
+
+
+// Review the points below
+
+// TODO: Be strict on octave equivalence in the MSB (Mod Syntax Block). 9 !== 2 and 10 !== 3
+//       E(#10) would add #10 instead of modifying the 3. E9#9 would modify the 9.
+//       E9#2 and E9#16 would add a #2 tone rather than modifying the 9.
+
+// TODO: Be lax on the ASB (Add SB). #10 vs #3 comes down to voicing considerations. Of course
+//       if you write Em11b18 or Em11(add b18) MAYBE we can float some (restOfTheChord + "b18") voicings to the top
+//       but chord symbols otherwise just can't communicate voicing.
+//       Em11(add b18) as (restOfTheChord + "b18") is not necessarily E(1) G(b3) B(5) D(b7) F#(9) A(11) G#(b18) or anything else.
+//       Just (restOfTheChord + "b18"), or maybe even only ("11" + "b18") is what it tells us.
+
+
+
+class Blueprint {
+
+  constructor(source) {
+    this.name = source.name;
+    this.sym = source.sym;
+    this.intervals = source.intervals;
+    this.capabilities = source.capabilities; // capabilities should always be passed in
+    this.activeAlterations = source.activeAlterations || new Alterations();
+
+    /* blueprint.base is used to preserve the blueprint we started with (before any alterations)
+           If it exists already then we just use that
+           If it doesn't, then that can only be because we're the source blueprint */
+
+    this.base = source.base || {
+        name: this.name,
+        sym: this.sym,
+        intervals: [...this.intervals]
     };
-
-
-
-    return blueprint;
-};
-
-// intervalList: Array of intervals in symbol form (String)
-// interval: MUST be interval with mod, NOT pure, is a symbol (String) TODO: enforce
-// Returns: Boolean
-function pureIntervalAlreadyExistsInList(intervalList, interval) {
-    var passedValue = Interval.intervalStringToInterval(interval);
-
-    return Boolean(intervalList.find(sym => {
-        let checkValue = Interval.intervalStringToInterval(sym);
-        return checkValue === passedValue;
-    }));
-};
-
-
-
-// this takes a blueprint.capabilities and moves from capabilities.add
-// to capabilities.mod where items are intervals with one or more accidentals
-// for the purpose of representing them in the string in a better shorthand,
-// but ONLY if the pure (unaltered) form of that interval doesn't already exist in the 
-// chord
-// i.e. instead of being stuck with 'E7(add #9)' which is logical
-// this would help us to generate a string 'E7#9' which is readable and terse
-// and the distinstion between E(b5) and E(add b5) is that 
-// in E(b5) the '5' in 'E' is being flattened, thus it has notes E, G#, A#
-// whereas in E(add b5) the'b5' is being added to the chord, not modifying/replacing
-// so it has the notes E, G# B, A#
-
-// TODO: do both? for naming coverage
-// this is specific to alterations more than blueprint?
-Blueprint.generateStringNormalizedAlterations = function (blueprint) {
-
-    // shallow copy
-    let alterations = Alterations.copy(blueprint.activeAlterations);
-
-    // Copy the intervals with accidentals from .add to .mod
-    alterations.add.forEach((interval, index) => {
-        if (Interval.hasAccidental(interval) && !pureIntervalAlreadyExistsInList(alterations.mod, interval)) {
-            // Note: notice that the order will ALWAYS be mods first before the mods that are accidental adds
-            alterations.mod.push(interval);
-        }
-    });
-
-    // remove the items that we pulled from .add
-    alterations.add = alterations.add.reduce((list,interval) => {
-        if (!Interval.hasAccidental(interval)) { list.push(interval) };
-        return list;
-    }, []);
-
-    return alterations;
-
-}
-
-Blueprint.generateName = function (print) {
-    // No symbol to customize
-    if (!isAltered(print)) { return print.name; }
-
-    // copy blueprint
-    let blueprint = Blueprint.copy(print);
-
-    // send that blueprint to function to generate new capabilities object
-    // where capabilities.mod now has items that were previously in capabilities.add
-    // i.e. added tones with accidentals
-
-    // generates strings that prefer adds with accidentals as part of the mod string
-    blueprint.activeAlterations = Blueprint.generateStringNormalizedAlterations(blueprint);
-
-    // generate a string for mods
-    let mods = !isModified(blueprint) ? "" :
-        "(".concat(blueprint.activeAlterations.mod.map(sym => {
-            return Interval.symbolToEnglish(sym);
-        }).join(", ")).concat(")");
-
-    // generate a string for adds
-    let adds = !hasAddedTones(blueprint) ? "" :
-        "(Add ".concat(blueprint.activeAlterations.add.map(sym => { return Interval.symbolToEnglish(sym); }).join(", ").concat(")"));
-
-    if (mods && adds) {
-        mods = mods.concat(" ");
-    }
-
-    // bring it all together
-    return blueprint.base.name.concat(" ".concat(mods.concat(adds)));
-}
-
-Blueprint.generateSymbol = function (print) {
-
-    // No symbol to customize
-    if (!isAltered(print)) { return print.sym; }
-
-    // copy blueprint
-    let blueprint = Blueprint.copy(print);
-
-    // generates strings that prefer adds with accidentals as part of the mod string
-    blueprint.activeAlterations = Blueprint.generateStringNormalizedAlterations(blueprint);
-
-    // generate a string for mods
-    let mods = !isModified(blueprint) ? "" : (() => {
-        if (blueprint.base.sym === "") {
-            return "(".concat(blueprint.activeAlterations.mod.join()).concat(")");
-        }
-        return blueprint.activeAlterations.mod.join();
-    })();
-
-    // generate a string for adds
-    let adds = !hasAddedTones(blueprint) ? "" :
-        "(add ".concat(blueprint.activeAlterations.add.join(", ").concat(")"));
-
-    // bring it all together
-    return blueprint.base.sym.concat(mods.concat(adds));
-
-    //   For when we support accidental adds. Maybe just do two versions: one with all accidental adds in the mod list (if we can) and
-    //   another for all accidental adds in the add list
-}
-
-
-const Capabilities = {};
-// ARRAY:STRING modList: something like blueprint.capabilities.mod
-// STRING interval : interval symbol
-
-// pass a mod (interval with accidental) and modlist (array of mod symbols (string))
-// will return a list that removes all lost mod capabilities incurred by the initial mod in question
-Capabilities.removeModsForMod = function (modlist, interval) {
-    // 'b5' --> '5'
-    let pureSource = Interval.removeAccidentals(interval);
-
-    return modlist.reduce((list, target) => {
-        let pureTarget = Interval.removeAccidentals(target);
-        if (pureTarget !== pureSource) {
-            list.push(target);
-        }
-        return list;
-    }, []);
-};
-//
-// ARRAY:STRING addList: something like blueprint.capabilities.add
-// STRING interval : interval symbol
-//
-//   When a chord, like G#aug-maj7 is modified (taking a pure interval and b or # it)
-//     We want to add the now missing pure interval to the capabilities.add list
-//     if it does not exist. If it does exist, the list produced is identical.
-//
-Capabilities.addPureAddToneFromMod = function(addList, interval) {
-    let list = [...addList];
-    let pureInterval = Interval.removeAccidentals(interval);
-    if (!list.find(add => add !== pureInterval)) {
-        list.push(pureInterval);
-    }
-    return list;
-};
-
-
-/* Alterations */
-const Alterations = {};
-
-Alterations.copy = function (source) {
-    // shallow copy
-    let copy = source ? Object.assign({}, source) : {
-        add: [],
-        mod: []
-    };
-
-    // shallow copy internal properties
-    copy.mod = copy.mod ? [...copy.mod] : [];
-    copy.add = copy.add ? [...copy.add] : [];
-
-    return copy;
-};
-
-Alterations.areEmpty = function (altObj) {
-    return (altObj.add.length === 0 && altObj.mod.length === 0);
-};
-
-Alterations.haveCapabilities = function (altObj) {
-    return !Alterations.areEmpty(obj.capabilities);
-};
-
-// Orphaned functions
-
-// intervals: list of string symbols
-// interval: a string symbol with an accidental (one hopes)
-// todo: this function is octave specific. b2 wouldn't knock a pure 9 out of the way or vice versa etc
-// is that GOOD behavior?
-function replacePureIntervalWithMod(intervals, interval) {
-    let pureInterval = Interval.removeAccidentals(interval);
-    return intervals.map(reference => {
-        return (reference === pureInterval) ? interval : reference;
-    });
-}
-
-// blueprint and chord both share these functions
-function isAltered(obj) {
-    return !Alterations.areEmpty(obj.activeAlterations);
-}
-
-function isModified(obj) {
-    return obj.activeAlterations.mod.length > 0;
-}
-
-function hasAddedTones(obj) {
-    return obj.activeAlterations.add.length > 0;
-}
-
-// TODO: the order generateNormalizedAlterations produces should dictate the order of the .notes and .intervals
-//  for preserving note order in the database and making these chords truly distinct in written form
-
-// OR perhaps calculating VOICINGS for a chord is a separate matter altogether!
-
-// root = Note object
-// intervals = array of interval symbols
-
-function Chord(note, blueprint) {
-    const bp = Blueprint.copy(blueprint);
-    this.blueprint = bp;
-    this.root = Note.fromName(note);
-    this.name = this.root.name.concat(" ").concat(bp.name);
-    this.sym = this.root.name.concat(bp.sym);
-
-    this.notes = Chord.generateNotes(this.root, bp.intervals);
-
-    // Take a cloned activeAlterations object '{add:[],mod:[]}' from the blueprint
-    //   where each list item is an interval symbol string
-    this.activeAlterations = Alterations.copy(bp.activeAlterations);
-
-    // Take a cloned capabilities object '{add:[],mod:[]}' from the blueprint
-    //   where each list item is an interval symbol string
-    this.capabilities = Alterations.copy(bp.capabilities);
-
-    console.log("chord created (NO ALTERATIONS GENERATED YET)");
-
-/* temp for data dumping // NOTE MAKE SURE TO CLEAR OUT my_file.text FIRST SINCE THIS APPENDS!
-    if (this.root.name === "A" && this.blueprint.base.name === "Major") {
-        var fs = require('fs');
-
-        //var stream = fs.createWriteStream("my_file.txt");
-        let t = Chord.toQuickJSON(this).concat(",\n\n");
-        console.log("d");
-        fs.appendFileSync('my_file.txt', t, function (err) {
-            if (err) throw err;
-            //chords.forEach(chord => stream.appendFile(Chord.toQuickJSON(chord).concat(",\n\n")));
-        });
-
-    } */
-    
-
-
-    // Use blueprint.capabilities to generate an alteration object '{add:[],mod:[]}'
-    //   where each list item is a chord object of one alteration step away from this chord
-    this.alteredChords = Chord.generateAlterations(this, bp);
-
-    // Enter into database?
-}
-
-Chord.generateNotes = function (root, intervals) {
-    return [root].concat(intervals.map(interval => root.plus(interval)));
-};
-
-Chord.generateAlterations = function (chord, blueprint) {
-    return {
-        mod: blueprint.capabilities.mod.map(interval => Chord.createMod(chord, interval)),
-        add: blueprint.capabilities.add.map(interval => Chord.createAdd(chord, interval))
-    };
-};
-
-// shouldn't we use this function instead of 
-function removeIntervalValueFromlist(list, intSymbol) {
-    var passedValue = Interval.intervalStringToInterval(intSymbol);
-
-    return list.reduce((collection, sym) => {
-        let checkValue = Interval.intervalStringToInterval(sym);
-        if (checkValue !== passedValue) { collection.push(sym);}
-        return collection;
-    }, []);
-
-}
-
-
-// if mod, always accidental, so always check if modded note
-// needs to be removed from capabilities.mod and capabilities.add
-
-Chord.createMod = function(chord, intSymbol) {
-    // Start creating a new blueprint for the modified chord
-    let blueprint = Blueprint.copy(chord.blueprint);
-
-    // replace the appropriate item in blueprint.intervals
-    blueprint.intervals = replacePureIntervalWithMod(blueprint.intervals, intSymbol);
-
-    // remove the new modification from blueprint.capabilities.mod
-    // as it's not a capability
-    let index = blueprint.capabilities.mod.indexOf(intSymbol);
-    blueprint.capabilities.mod.splice(index, 1);
-
-    // Since this mod could be a capability for add, remove that too
-    // (based on absolute interval value ())
-    blueprint.capabilities.add = removeIntervalValueFromlist(blueprint.capabilities.add, intSymbol);
-
-    //let index = blueprint.capabilities.add.indexOf(intSymbol);
-    //blueprint.capabilities.add.splice(index, 1);
-
-    // Remove any capabilities.mod item that has the natural symbol anywhere
-    // i.e. if int symbol is #9, that means we modified a natural 9,
-    // so any other entry for 9 (b9, bb9, ##9, etc) should also be removed
-    /* deprecated removeAllCapabilitiesForModSymbol(blueprint, intSymbol); */
-    blueprint.capabilities.mod = Capabilities.removeModsForMod(blueprint.capabilities.mod, intSymbol);
-
-    // Identify the mod as active
-    blueprint.activeAlterations.mod.push(intSymbol);
-
-    // A pure interval was modded, so that same pure interval just became available to add
-    blueprint.capabilities.add = Capabilities.addPureAddToneFromMod(blueprint.capabilities.add, intSymbol);
-
-    // Generate blueprint specific symbol and human readable English name
-    blueprint.sym = Blueprint.generateSymbol(blueprint);
-    blueprint.name = Blueprint.generateName(blueprint);
-
-    // Generate the new chord using the blueprint
-    let newChord = new Chord(chord.root.name, blueprint);
-
-    return newChord;
-};
-
-Chord.createAdd = function(chord, intSymbol) {
-    // Start creating a new blueprint for the add chord
-    let blueprint = Blueprint.copy(chord.blueprint);
-
-    // add an item to blueprint.intervals
-    blueprint.intervals.push(intSymbol);
-
-    // remove the new add from blueprint.capabilities.add
-    let index = blueprint.capabilities.add.indexOf(intSymbol);
-    blueprint.capabilities.add.splice(index, 1);
-
-    // if accidental
-    //blueprint.capabilities.add = removeIntervalValueFromlist(blueprint.capabilities.add, intSymbol);
+    // TODO: Freeze blueprint.base and all items within if necessary ?
+  }
+
+  copy() {
+      // Shallow copy
+      const copy = {
+          name: this.name,
+          sym: this.sym,
+          intervals: [...this.intervals],
+          capabilities: this.capabilities.copy(),
+          activeAlterations: this.activeAlterations.copy(),
+          base: this.base
+      };
+      return new Blueprint(copy);
+  }
+
+
+  createAddedTone(intSymbol) {
+    const copy = this.copy();
+
+    // add this symbol to intervals
+    copy.intervals.push(intSymbol);
+
+    // remove this add symbol from capabilities
+    const index = copy.capabilities.add.indexOf(intSymbol);
+    copy.capabilities.add.splice(index, 1);
 
     // [Part of Accidental Adds]
     //   If accidental add, it's possible that a capability.mod was made
     //   redundant e.g. E13(add #9) the '#9' item in capability.mod
-    //   would now be inconsequential (you'd be subtracting notes rather 
+    //   would now be inconsequential (you'd be subtracting notes rather
     //   than adding since two notes are repeated)
 
-    // NEW_FEATURE accidental adds
-    if (Interval.hasAccidental(intSymbol)) {
-        console.log("It's an add with an accidental");
-        //blueprint.capabilities.mod = Capabilities.removeModsForMod(blueprint.capabilities.mod, intSymbol);
-
-
-        blueprint.capabilities.mod = removeIntervalValueFromlist(blueprint.capabilities.mod, intSymbol);
+    if (Interval.Notation.hasAccidental(intSymbol)) {
+        copy.capabilities.mod = Interval.Notation.List.removeValue(copy.capabilities.mod, intSymbol);
+        // copy.capabilities.removeMod(intSymbol);
     }
 
-    // Identify the alteration as active
-    blueprint.activeAlterations.add.push(intSymbol);
-    ;
+    // mark as active
+    copy.activeAlterations.add.push(intSymbol);
+
     // Generate blueprint specific symbol and human readable English name
-    blueprint.sym = Blueprint.generateSymbol(blueprint);
-    blueprint.name = Blueprint.generateName(blueprint);
+    copy.sym = copy.generateSymbol();
+    copy.name = copy.generateName();
 
-    // Generate the new chord
-    let newChord = new Chord(chord.root.name, blueprint);
+    return new Blueprint(copy);
+  };
 
-    return newChord;
-};
+  createModified(intSymbol) {
+      const copy = this.copy();
+
+      console.log("blueprint.createModified()");
+      console.log(copy.capabilities);
+
+      replaceTheModifiedPureTone();
+      //  removeThisModFromCapabilities();
+      copy.capabilities.removeExactMod(intSymbol);
+      console.log(copy.capabilities);
+      // removeAssociatedAddFromCapabilities();
+      copy.capabilities.add = copy.capabilities.removeAddedTonesForMod(intSymbol); //TODO: remove addedTones for mod
+      console.log(copy.capabilities);
+      // removeAssociatedModsFromCapabilities();
+      copy.capabilities.mod = copy.capabilities.removeAssociatedModsForMod(intSymbol);
+      copy.addToActiveModList(intSymbol)
+      // appendNewPureAddToneCapability();
+      copy.capabilities.add = copy.capabilities.appendPureAddTone(intSymbol);
+      //generateChordNameAndSymbol();
+      copy.sym = copy.generateSymbol();
+      copy.name = copy.generateName();
+      return new Blueprint(copy);
+
+      function replaceTheModifiedPureTone() {
+          // replace the appropriate item in blueprint.intervals (intSymbol is b5 and we are looking for a 5 to replace)
+          copy.intervals = Interval.Notation.List.modify(copy.intervals, intSymbol);
+      }
+      // TODO: removeAssociatedModsFromCapabilities and removeThisModFromCapabilities should probably just be Capabilities.removeAllModCapabilities();
+  }
 
 
-Chord.toQuickJSON = function (chord) {
-    let intermed = {
-        name: chord.name,
-        sym: chord.sym,
-        activeAlterations: chord.activeAlterations,
-        capabilities: chord.capabilities
-    };
-    let json = JSON.stringify(intermed);
-    return json;
+
+
+  generateName() {
+      // No symbol to customize
+      if (!this.isAltered()) { return this.name; }
+
+      // copy blueprint
+      const blueprint = this.copy();
+
+      // send that blueprint to function to generate new capabilities object
+      // where capabilities.mod now has items that were previously in capabilities.add
+      // i.e. added tones with accidentals
+
+      // generates strings that prefer adds with accidentals as part of the mod string
+      blueprint.activeAlterations = blueprint.generateStringNormalizedAlterations();
+
+      // generate a string for mods
+      const csvMods = blueprint.getActiveModsAsTextCSV();
+      let mods = !blueprint.isModified() ? "" : `(${csvMods})`;
+
+      // generate a string for adds
+      const csvAdds = blueprint.getActiveAddTonesAsTextCSV();
+      const adds = !blueprint.hasAddedTones() ? "" : `(Add ${csvAdds})`;
+
+      // Just adds a space between them i.e. '(Flat Five) (Add 9)'
+      mods = (mods && adds) ? `${mods} ` : mods;
+
+      // bring it all together
+      return `${blueprint.base.name} ${mods}${adds}`;
+      //return blueprint.base.name.concat(" ".concat(mods.concat(adds)));
+  }
+
+  generateSymbol() {
+
+      // No symbol to customize
+      if (!this.isAltered()) { return this.sym; }
+
+      // copy blueprint
+      const blueprint = this.copy();
+
+      // generate strings that prefer adds with accidentals as part of the mod string
+      blueprint.activeAlterations = blueprint.generateStringNormalizedAlterations();
+
+      // generate a string for mods, wrapping in () if empty base quality notation
+      const mods = !blueprint.isModified() ? "" : (() => {
+          const modStr = blueprint.activeAlterations.mod.join();
+          console.log(blueprint.base); // TODO: BUG HERE. is blueprint.base not an obj?
+          return blueprint.baseNotationIsBlank() ? `(${modStr})` : modStr;
+      })();
+
+      // generate a string for adds
+      const activeAdds = blueprint.activeAlterations.add.join(",");
+      const adds = blueprint.hasAddedTones() ? `(add ${activeAdds})` : "";
+    
+      // bring it all together
+      return `${blueprint.base.sym}${mods}${adds}`;
+
+      //   For when we support accidental adds. Maybe just do two versions: one with all accidental adds in the mod list (if we can) and
+      //   another for all accidental adds in the add list
+  }
+
+
+
+
+
+  // functions that MUTATE the object specifically in place
+  addToActiveModList(intSymbol) {
+      this.activeAlterations.addModifier(intSymbol);
+  }
+
+  // generating funcs that delegate to Alteration instances
+  generateStringNormalizedAlterations() {
+      return this.activeAlterations.generateStringNormalized(this.base.intervals);
+  }
+
+
+  // bool returns that delegate to Alteration instances
+  isAltered() {
+      return !this.activeAlterations.isEmpty();
+  }
+
+  isModified() {
+      return this.activeAlterations.hasModifications();
+  }
+
+  hasAddedTones() {
+      return this.activeAlterations.hasAddedTones();
+  }
+
+  // bool return that concerns with the symbol
+  notationIsBlank() {
+      return this.sym === "";
+  }
+
+  // bool return that concerns with the symbol
+  baseNotationIsBlank() {
+      return this.base.sym === "";
+  }
+
+
+  // getters that delegate to Alteration instances
+  getActiveAddTonesTextList() {
+      return this.activeAlterations.add.map( sym => Interval.Notation.toText(sym) );
+  }
+
+  getActiveModsTextList() {
+      return this.activeAlterations.mod.map( sym => Interval.Notation.toText(sym) );
+  }
+
+  getActiveAddTonesNotationList() {
+      return this.activeAlterations.add.join();
+  }
+
+  getActiveModsNotationList() {
+      return this.activeAlterations.mod.join();
+  }
+
+  getActiveModsAsNotationCSV() {
+    const modList = this.getActiveModsNotationList();
+    return modList.join(", ");
+  }
+
+  getActiveAddTonesAsNotationCSV() {
+    const addList = this.getActiveAddTonesNotationList();
+    return addList.join(", ");
+  }
+
+  getActiveModsAsTextCSV() {
+    const modList = this.getActiveModsTextList();
+    return modList.join(", ");
+  }
+
+  getActiveAddTonesAsTextCSV() {
+    const addList = this.getActiveAddTonesTextList();
+    return addList.join(", ");
+  }
 }
 
 
-// MASSIVE TODO: Are we doing odd things like allowing mod: b5 and add: #11?? We are!
-//  There needs to be a way that this is self-correcting. We have to check if that interval EXISTS
-//  compare absolute values??! Probably easy
 
 
+
+
+class Capabilities {
+  /* An object of {mod: [], add: []} where both lists are interval symbols in string form */
+  // Just put the functions for capabilities into Alterations????
+
+
+  constructor(source) {
+      if (source) {
+          this.add = source.add;
+          this.mod = source.mod;
+      } else {
+          this.add = [];
+          this.mod = [];
+      }
+  }
+
+  copy() {
+    const copy = {mod: [...this.mod], add: [...this.add]};
+    return new Capabilities(copy);
+  }
+
+  removeAssociatedModsForMod(interval) {
+      // 'b5' --> '5'
+      const pureSource = Interval.Notation.removeAccidentals(interval);
+
+      // create a new list that filters out any item with  '5' (#5,b5,bb5, etc)
+      return this.mod.reduce((list, target) => {
+          const pureTarget = Interval.Notation.removeAccidentals(target);
+          if (pureTarget !== pureSource) {
+              list.push(target);
+          }
+          return list;
+      }, []);
+  }
+
+  removeExactMod(intSymbol) {
+      // unlike removeAssociatedModsForMods this just removes one exact match mod
+
+      const index = this.mod.indexOf(intSymbol);
+      this.mod.splice(index, 1);
+  }
+
+  removeAddedTonesForMod(intSymbol) {
+      // Since this mod could be a capability for add, remove that too
+      return Interval.Notation.List.removeValue(this.add, intSymbol);
+  }
+
+  appendPureAddTone(interval) {
+     // You pass "b5" and a 5 gets added
+     console.log(this);
+      const list = [...this.add];
+      const pureInterval = Interval.Notation.removeAccidentals(interval);
+      if (!list.find(add => add !== pureInterval)) {
+          list.push(pureInterval);
+      }
+      return list;
+  }
+
+}
+
+
+
+class Alterations {
+    /* An object of {mod: [], add: []} where both lists are interval symbols in string form
+                                                            i.e. ["9", "#11"] */
+
+  constructor(source) {
+      if (source) {
+          this.add = source.add;
+          this.mod = source.mod;
+      } else {
+          this.add = [];
+          this.mod = [];
+      }
+  }
+
+  isEmpty() {
+    return (this.add.length === 0 && this.mod.length === 0);
+  }
+
+  /* No one uses this, it references capabilities. Why is it here? */
+  haveCapabilities() {
+      return !this.capabilities.isEmpty();
+  }
+ /* No one uses this. Why is it here? Is this code that already exists in blueprint anyway? */
+  hasAlterations() {
+      return this.activeAlterations.isEmpty();
+  }
+
+  hasModifications() {
+      return this.mod.length > 0;
+  }
+
+  hasAddedTones() {
+      return this.add.length > 0;
+  }
+
+  copy() {
+    const copy = {mod: [...this.mod], add: [...this.add]};
+    return new Alterations(copy);
+  }
+
+  generateStringNormalized(blueprintBaseIntervals) {
+      // shallow copy
+      const alterations = this.copy();
+
+      // Copy the intervals with accidentals from .add to .mod
+      alterations.add.forEach((interval, index) => {
+          if (Interval.Notation.hasAccidental(interval) && !Interval.Notation.List.hasPureInterval(blueprintBaseIntervals, interval, {restrictOctave: true}) ) {
+              // Only if the interval has an accidental
+              // AND a pure version of the note doesnt already exist in blueprint.intervals
+
+              // Note: notice that the order will ALWAYS be mods first before the mods that are accidental adds
+              alterations.mod.push(interval);
+          }
+      });
+
+      // remove the items that we pulled from .add
+      alterations.add = alterations.add.reduce((list,interval) => {
+          if (!Interval.Notation.hasAccidental(interval) ||
+                Interval.Notation.List.hasPureInterval(blueprintBaseIntervals, interval, {restrictOctave: true})
+                )
+          { list.push(interval) };
+          return list;
+      }, []);
+
+      return new Alterations(alterations);
+  }
+
+  addModifier(intSymbol) {
+      this.mod.push(intSymbol);
+  }
+
+}
+
+
+
+
+class Chord {
+
+    constructor(note, blueprint) {
+      const bp = blueprint.copy();
+
+      this.blueprint = bp;
+      this.root = Note.fromName(note);
+      this.name = `${this.root.name} ${bp.name}`;
+      this.sym = `${this.root.name}${bp.sym}`;
+
+      //this.notes = Chord.generateNotes(this.root, bp.intervals);
+      this.notes = this.generateNotes();
+
+      // Take a cloned activeAlterations object '{add:[],mod:[]}' from the blueprint
+      //   where each list item is an interval symbol string
+      this.activeAlterations = bp.activeAlterations.copy();
+
+      // Take a cloned capabilities object '{add:[],mod:[]}' from the blueprint
+      //   where each list item is an interval symbol string
+      this.capabilities = bp.capabilities.copy();
+
+      console.log("chord created (NO ALTERATIONS GENERATED YET)");
+        //breakpoint
+      //temp for data dumping // NOTE MAKE SURE TO CLEAR OUT my_file.text FIRST SINCE THIS APPENDS!
+      if (this.root.name === "A" && this.blueprint.base.name === "Major") {
+          const fs = require('fs');
+
+          const stream = fs.createWriteStream("my_file.txt");
+          const t = this.toQuickJSON().concat(",\n\n");
+          console.log("d");
+          fs.appendFileSync('my_file.txt', t, function (err) {
+              if (err) throw err;
+              chords.forEach(chord => stream.appendFile(chord.toQuickJSON().concat(",\n\n")));
+          });
+
+       }
+
+       // Use blueprint.capabilities to generate an alteration object '{add:[],mod:[]}'
+       //   where each list item is a chord object of one alteration step away from this chord
+
+       this.alteredChords = this.generateAlterations();
+
+       // Enter into database?
+
+     }
+
+
+
+     generateNotes() {
+         return [this.root].concat(this.blueprint.intervals.map(interval => this.root.plus(interval)));
+     }
+
+     generateAlterations() {
+         return {
+             mod: this.blueprint.capabilities.mod.map(interval => this.createMod(interval)),
+             add: this.blueprint.capabilities.add.map(interval => this.createAdd(interval))
+         };
+     }
+
+
+
+     // if mod, always accidental, so always check if modded note
+     // needs to be removed from capabilities.mod and capabilities.add
+
+     createMod(intSymbol) {
+         const blueprint = this.blueprint.createModified(intSymbol);
+         return new Chord(this.root.name, blueprint);
+     }
+
+     createAdd(intSymbol) {
+         const blueprint = this.blueprint.createAddedTone(intSymbol);
+         return new Chord(this.root.name, blueprint);
+     }
+
+
+     toQuickJSON() {
+         const intermed = {
+             name: this.name,
+             sym: this.sym,
+             activeAlterations: this.activeAlterations,
+             capabilities: this.capabilities,
+             notes: this.notes
+         };
+         return JSON.stringify(intermed);
+     }
+
+}
 
 // just for right now, let's avoid (add 6s) or (add 13s) but we'll want the extra names later (because 6 chords exist)
 //  b6 is fine!
 
-// TODO: b5 mod and #11 add cause problems. At some point, we need to prevent that combination from happening
-//  whichever step happens first, when b5 goes in, both b5 and #11 which has the same interval value should be nixed
-//  from the lists of capabilities, and vice versa.
-
-// HUGE TODO: #5 is not fine on Major triad. Actually, be careful about accidental adds, because right now they would
-// get appended to the mod list in string generation! BUT we aren't modifying a note! So that means on Blueprint.generateNormalizedAlterations
-// we need to CHECK, does the pure form of the note (interval) exist in the BASE CHORD (BLUEPRINT) notes (harkens back to another todo)?
-// if it already exists in the base chord then we need to keep it in the add list
-
-
+// TODO: There's no support for add b13/b6 chords
+// TODO: Haven't even finished adding adds with accidentals. Major/Minor done.
+// TODO: give 9s add b9/#9 maybe and 11s add b11/#11 and etc
 const MAJOR_BLUEPRINTS = [{
     name: "Major",
     sym: "",
     intervals: ["3", "5"],
     capabilities: {
         mod: ["b5"],
-        add: ["9", "11", "b9", "#9", "#11"]
+        add: ["9", "11", "b9", "#9", "#11", "b13"]
     }
 },
 {
@@ -437,7 +509,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "6"],
     capabilities: {
         mod: ["b5"],
-        add: ["9", "11"]
+        add: ["9", "11", "b9", "#9", "#11", "b13"]
     }
 },
 {
@@ -446,7 +518,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "b7"],
     capabilities: {
         mod: ["b5"],
-        add: ["11", "13"],
+        add: ["11", "13", "b9", "#9", "#11", "b13"],
     }
 },
 {
@@ -455,7 +527,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "b7", "9"],
     capabilities: {
         mod: ["b5"],
-        add: ["13"]
+        add: ["13", "#11", "b13"]
     }
 },
 {
@@ -464,7 +536,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "b7", "9", "11"],
     capabilities: {
         mod: ["b5", "b9", "#9"],
-        add: []
+        add: ["b13"]
     }
 },
 {
@@ -482,7 +554,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "7"],
     capabilities: {
         mod: ["b5"],
-        add: ["11", "13"]
+        add: ["11", "13", "b9", "#9", "#11", "b13"]
     }
 },
 {
@@ -491,7 +563,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "7", "9"],
     capabilities: {
         mod: ["b5"],
-        add: ["13"]
+        add: ["13", "#11", "b13"]
     }
 },
 {
@@ -500,7 +572,7 @@ const MAJOR_BLUEPRINTS = [{
     intervals: ["3", "5", "7", "9", "11"],
     capabilities: {
         mod: ["b5", "b9", "#9"],
-        add: []
+        add: ["b13"]
     }
 },
 {
@@ -519,7 +591,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5"],
     capabilities: {
         mod: [],
-        add: ["9", "11"],
+        add: ["9", "11", "b9", "#11", "b13"],
     }
 },
 {
@@ -528,7 +600,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "6"],
     capabilities: {
         mod: [],
-        add: ["9", "11"]
+        add: ["9", "11", "b9", "#11", "b13"]
     }
 },
 {
@@ -537,7 +609,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "b7"],
     capabilities: {
         mod: [],
-        add: ["11", "13"]
+        add: ["11", "13", "b9", "#11", "b13"]
     }
 },
 {
@@ -546,7 +618,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "b7", "9"],
     capabilities: {
         mod: [],
-        add: ["13"]
+        add: ["13", "#11", "b13"]
     }
 },
 {
@@ -555,7 +627,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "b7", "9", "11"],
     capabilities: {
         mod: ["b9"],
-        add: []
+        add: ["b13"]
     }
 },
 {
@@ -573,7 +645,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "7"],
     capabilities: {
         mod: [],
-        add: ["11", "13"]
+        add: ["11", "13", "b9", "#11", "b13"]
     }
 },
 {
@@ -582,7 +654,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "7", "9"],
     capabilities: {
         mod: [],
-        add: ["13"]
+        add: ["13", "#11", "b13"]
     }
 },
 {
@@ -591,7 +663,7 @@ const MINOR_BLUEPRINTS = [{
     intervals: ["b3", "5", "7", "9", "11"],
     capabilities: {
         mod: ["b9"],
-        add: []
+        add: ["b13"]
     }
 },
 {
@@ -832,7 +904,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Seven",
-    sym: "ø7",
+    sym: "�7",
     intervals: ["b3", "b5", "b7"],
     capabilities: {
         mod: [],
@@ -841,7 +913,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Nine",
-    sym: "ø9",
+    sym: "�9",
     intervals: ["b3", "b5", "b7", "9"],
     capabilities: {
         mod: [],
@@ -850,7 +922,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Eleven",
-    sym: "ø11",
+    sym: "�11",
     intervals: ["b3", "b5", "b7", "9", "11"],
     capabilities: {
         mod: ["b9"],
@@ -859,7 +931,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Thirteen",
-    sym: "ø13",
+    sym: "�13",
     intervals: ["b3", "b5", "b7", "9", "11", "13"],
     capabilities: {
         mod: ["b9", "b11",],
@@ -903,6 +975,7 @@ const DIMINISHED_BLUEPRINTS = [{
     }
 }];
 
+// TODO: maybe Blueprints() takes array and returns blueprint objects;
 const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented",
     sym: "aug",
@@ -994,15 +1067,21 @@ const AUGMENTED_BLUEPRINTS = [{
     }
 }];
 
+
 function chordsFromBlueprints(note, blueprints) {
-    return blueprints.map(blueprint => {
+    const bps = blueprints.map(bp => {
+      bp.capabilities = new Capabilities(bp.capabilities);
+      let b = new Blueprint(bp);
+      return b;
+    });
+    return bps.map(blueprint => {
         return new Chord(note, blueprint);
     });
 }
 
 function allChordsFromBlueprints(blueprints) {
-    let notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
-
+    const notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+    // TODO: let notes = Note.list.map(note => note.name);
     return notes.reduce((list, note) => {
         return list.concat(chordsFromBlueprints(note, blueprints));
     }, []);
@@ -1011,7 +1090,7 @@ function allChordsFromBlueprints(blueprints) {
 
 
 
-let chords = allChordsFromBlueprints(MAJOR_BLUEPRINTS
+const chords = allChordsFromBlueprints(MAJOR_BLUEPRINTS
     .concat(MINOR_BLUEPRINTS)
     .concat(SUSPENDED_BLUEPRINTS)
     .concat(DIMINISHED_BLUEPRINTS)
@@ -1030,4 +1109,4 @@ stream.once('open', function (fd) {
 });*/
 
 console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
-
+// JavaScript source code
