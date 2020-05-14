@@ -6,20 +6,19 @@ it("",function(){
 });
 */
 describe("Chord suite",function(){
+
     it("Recognizes basic triads",function(){
 
         let ch = chord.chordFromNotation("D");
-        console.log("***************Recognizes basic triads********************");
-        console.log(ch.quality.triad.value);
         expect(ch.quality.triad.value).toBe("major");
 
-        ch = chord.chordFromNotation("Dm");
+        ch = chord.chordFromNotation("Em");
         expect(ch.quality.triad.value).toBe("minor");
 
-        ch = chord.chordFromNotation("D+");
+        ch = chord.chordFromNotation("D#+");
         expect(ch.quality.triad.value).toBe("aug");
 
-        ch = chord.chordFromNotation("Ddim");
+        ch = chord.chordFromNotation("Abdim");
         expect(ch.quality.triad.value).toBe("dim");
 
         ch = chord.chordFromNotation("Dlyd");
@@ -36,6 +35,19 @@ describe("Chord suite",function(){
 
         ch = chord.chordFromNotation("D#m");
         expect(ch.quality.triad.value).toBe("minor");
+    });
+
+    
+    it("Recognizes the root note", function(){
+
+        let ch = chord.chordFromNotation("D");
+        expect(ch.rootNote.name).toBe("D");
+
+        ch = chord.chordFromNotation("Em");
+        expect(ch.rootNote.name).toBe("E");
+
+        ch = chord.chordFromNotation("F#maj7");
+        expect(ch.rootNote.name).toBe("F#");
     });
 
     it("Note Supports zero or more accidentals",function(){
@@ -209,39 +221,64 @@ describe("Chord suite",function(){
 
         // Looks for '5' and 'b's it
         let ch = chord.chordFromNotation("D(add 9)");
-        let test = ch.hasNote("E");
+        expect(ch.quality.triad.value).toBe("major");
         expect(ch.hasNote("E")).toBe(true);
 
         // Supports sharps/flats
-        ch = chord.chordFromNotation("D(add #11)");
+        ch = chord.chordFromNotation("Dm(add #11)");
+        expect(ch.quality.triad.value).toBe("minor");
         expect(ch.hasNote("G#")).toBe(true);
 
         // Can add one or more in a list
         ch = chord.chordFromNotation("D(add #11, b6)");
+        expect(ch.quality.triad.value).toBe("major");
         expect(ch.hasNote("G#")).toBe(true);
         expect(ch.hasNote("A#")).toBe(true);
 
-        // Can omit 'add' and if the note does not already exist, behavior is the same
-        ch = chord.chordFromNotation("E6(9)");
-        expect(ch.hasNote("F#")).toBe(true);
+        // Can omit 'add' and if the note does not already exist
+        //    AND the added note has an accidental, behavior is the same
+        ch = chord.chordFromNotation("Dm(b6)");
+        expect(ch.quality.triad.value).toBe("minor");
+        expect(ch.hasNote("A#")).toBe(true);
 
-        // Can omit 'add' and if the note does not already exist, behavior is the same
-        ch = chord.chordFromNotation("E6(9,11)");
-        expect(ch.hasNote("F#")).toBe(true);
-        expect(ch.hasNote("A")).toBe(true);
+        ch = chord.chordFromNotation("Emaj7(b9)");
+        expect(ch.quality.triad.value).toBe("major");
+        expect(ch.quality.extension.value).toBe("maj7");
+        expect(ch.hasNote("F")).toBe(true);
+
+        // However, putting an add in the mod list with a pure interval is unacceptable
+        expect( function(){
+            chord.chordFromNotation("E6(9)");
+        } ).toThrow();
+
+        expect( function(){
+            chord.chordFromNotation("E7(9,11)");
+        } ).toThrow();
 
 
 
 
     });
 
-    // TODO
+
     it("Supports chord modifiers",function(){
         // Looks for '5' and 'b's it
         let ch = chord.chordFromNotation("D6(b5)");
         expect(ch.quality.triad.value).toBe("major");
         expect(ch.quality.extension.value).toBe("6");
-        expect(ch.quality.extension.value).toBe("6");
+        // the b5
+        expect(ch.hasNote("G#")).toBe(true);
+        // it should not have the 5
+        expect(ch.hasNote("A")).toBe(false);
+
+        // Looks for '5' and 'b's it
+        let ch = chord.chordFromNotation("F#m-maj11#9");
+        expect(ch.quality.triad.value).toBe("minor");
+        expect(ch.quality.extension.value).toBe("maj11");
+        // the #9
+        expect(ch.hasNote("A")).toBe(true);
+        // it should not have the 9
+        expect(ch.hasNote("G#")).toBe(false);
 
 
 
