@@ -1108,5 +1108,5 @@ stream.once('open', function (fd) {
     stream.end();
 });*/
 
-console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
+//console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
 // JavaScript source code

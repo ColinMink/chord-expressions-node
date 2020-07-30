@@ -9,7 +9,7 @@
   "main": "index",
   "scripts": {
     "build": "pegjs ./lib/resources/parser/parser.pegjs",
-    "test": "jasmine"
+    "test": "jasmine spec/tests/chordspec.js"
   },
   "contributors": [
     "Colin Mink (https://github.com/ColinMink)",
