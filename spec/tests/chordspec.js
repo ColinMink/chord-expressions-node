@@ -1,10 +1,5 @@
 const chord = require('../../index.js').Chord;
-console.log(chord);
-/*
-it("",function(){
 
-});
-*/
 describe("Chord suite",function(){
 
     it("Recognizes basic triads",function(){
