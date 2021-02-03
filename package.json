@@ -8,8 +8,8 @@
   },
   "main": "index",
   "scripts": {
-    "build": "pegjs ./lib/resources/parser/parser.pegjs",
-    "test": "jasmine spec/tests/chordspec.js"
+    "build": "pegjs ./lib/resources/parser/note_list_parser.pegjs",
+    "test": "jasmine"
   },
   "contributors": [
     "Colin Mink (https://github.com/ColinMink)",
