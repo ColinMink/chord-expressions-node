@@ -92,16 +92,16 @@ class Blueprint {
   createModified(intSymbol) {
       const copy = this.copy();
 
-      console.log("blueprint.createModified()");
-      console.log(copy.capabilities);
+      //console.log("blueprint.createModified()");
+      //console.log(copy.capabilities);
 
       replaceTheModifiedPureTone();
       //  removeThisModFromCapabilities();
       copy.capabilities.removeExactMod(intSymbol);
-      console.log(copy.capabilities);
+      //console.log(copy.capabilities);
       // removeAssociatedAddFromCapabilities();
       copy.capabilities.add = copy.capabilities.removeAddedTonesForMod(intSymbol); //TODO: remove addedTones for mod
-      console.log(copy.capabilities);
+      //console.log(copy.capabilities);
       // removeAssociatedModsFromCapabilities();
       copy.capabilities.mod = copy.capabilities.removeAssociatedModsForMod(intSymbol);
       copy.addToActiveModList(intSymbol)
@@ -166,7 +166,7 @@ class Blueprint {
       // generate a string for mods, wrapping in () if empty base quality notation
       const mods = !blueprint.isModified() ? "" : (() => {
           const modStr = blueprint.activeAlterations.mod.join();
-          console.log(blueprint.base); // TODO: BUG HERE. is blueprint.base not an obj?
+          //console.log(blueprint.base); // TODO: BUG HERE. is blueprint.base not an obj?
           return blueprint.baseNotationIsBlank() ? `(${modStr})` : modStr;
       })();
 
@@ -311,7 +311,7 @@ class Capabilities {
 
   appendPureAddTone(interval) {
      // You pass "b5" and a 5 gets added
-     console.log(this);
+     //console.log(this);
       const list = [...this.add];
       const pureInterval = Interval.Notation.removeAccidentals(interval);
       if (!list.find(add => add !== pureInterval)) {
@@ -421,22 +421,23 @@ class Chord {
       //   where each list item is an interval symbol string
       this.capabilities = bp.capabilities.copy();
 
-      console.log("chord created (NO ALTERATIONS GENERATED YET)");
+      //console.log("chord created (NO ALTERATIONS GENERATED YET)");
         //breakpoint
       //temp for data dumping // NOTE MAKE SURE TO CLEAR OUT my_file.text FIRST SINCE THIS APPENDS!
+      /*
       if (this.root.name === "A" && this.blueprint.base.name === "Major") {
           const fs = require('fs');
 
           const stream = fs.createWriteStream("my_file.txt");
           const t = this.toQuickJSON().concat(",\n\n");
-          console.log("d");
+          //console.log("d");
           fs.appendFileSync('my_file.txt', t, function (err) {
               if (err) throw err;
               chords.forEach(chord => stream.appendFile(chord.toQuickJSON().concat(",\n\n")));
           });
 
        }
-
+       */
        // Use blueprint.capabilities to generate an alteration object '{add:[],mod:[]}'
        //   where each list item is a chord object of one alteration step away from this chord
 
@@ -1089,13 +1090,16 @@ function allChordsFromBlueprints(blueprints) {
 
 
 
+function generateChords (){
+    return allChordsFromBlueprints(MAJOR_BLUEPRINTS
+        .concat(MINOR_BLUEPRINTS)
+        .concat(SUSPENDED_BLUEPRINTS)
+        .concat(DIMINISHED_BLUEPRINTS)
+        .concat(AUGMENTED_BLUEPRINTS)
+    );
+}
 
-const chords = allChordsFromBlueprints(MAJOR_BLUEPRINTS
-    .concat(MINOR_BLUEPRINTS)
-    .concat(SUSPENDED_BLUEPRINTS)
-    .concat(DIMINISHED_BLUEPRINTS)
-    .concat(AUGMENTED_BLUEPRINTS)
-);
+module.exports.generateChords = generateChords;
 
 
 
@@ -1108,5 +1112,5 @@ stream.once('open', function (fd) {
     stream.end();
 });*/
 
-//console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
+////console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
 // JavaScript source code
