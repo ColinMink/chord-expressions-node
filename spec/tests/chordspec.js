@@ -192,7 +192,7 @@ describe("Chord suite",function(){
         // Root note is always the first note in the chord symbol as it's fundamental
         expect(ch.rootNote.name).toBe("D");
         // The note after the slash is the Bass note (lowest tone in the chord)
-        expect(ch.baseNote.name).toBe("B");
+        expect(ch.bassNote.name).toBe("B");
 
         ch = chord.chordFromNotation("F#maj7/C#");
         expect(ch.quality.extension.value).toBe("maj7");
@@ -200,14 +200,14 @@ describe("Chord suite",function(){
         // Root note is always the first note in the chord symbol as it's fundamental
         expect(ch.rootNote.name).toBe("F#");
         // The note after the slash is the Bass note (lowest tone in the chord)
-        expect(ch.baseNote.name).toBe("C#");
+        expect(ch.bassNote.name).toBe("C#");
 
         ch = chord.chordFromNotation("Esus2/F#");
         expect(ch.quality.triad.value).toBe("sus2");
         // Root note is always the first note in the chord symbol as it's fundamental
         expect(ch.rootNote.name).toBe("E");
         // The note after the slash is the Bass note (lowest tone in the chord)
-        expect(ch.baseNote.name).toBe("F#");
+        expect(ch.bassNote.name).toBe("F#");
 
     });
 
