@@ -6,7 +6,6 @@ describe("Chord suite",function(){
 
         let ch = chord.chordFromNotation("D");
         expect(ch.quality.triad.value).toBe("major");
-
         ch = chord.chordFromNotation("Em");
         expect(ch.quality.triad.value).toBe("minor");
 
