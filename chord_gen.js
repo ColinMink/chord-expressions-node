@@ -952,7 +952,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Seven",
-    sym: "�7",
+    sym: "ø7",
     intervals: ["b3", "b5", "b7"],
     category: "Seven",
     capabilities: {
@@ -962,7 +962,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Nine",
-    sym: "�9",
+    sym: "ø9",
     intervals: ["b3", "b5", "b7", "9"],
     category: "Nine",
     capabilities: {
@@ -972,7 +972,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Eleven",
-    sym: "�11",
+    sym: "ø11",
     intervals: ["b3", "b5", "b7", "9", "11"],
     category: "Eleven",
     capabilities: {
@@ -982,7 +982,7 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Thirteen",
-    sym: "�13",
+    sym: "ø13",
     intervals: ["b3", "b5", "b7", "9", "11", "13"],
     category: "Thirteen",
     capabilities: {
