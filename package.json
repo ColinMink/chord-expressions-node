@@ -8,7 +8,7 @@
   },
   "main": "index",
   "scripts": {
-    "build": "pegjs ./lib/resources/parser/parser.pegjs",
+    "build": "pegjs ./lib/resources/parser/note_list_parser.pegjs",
     "test": "jasmine"
   },
   "contributors": [

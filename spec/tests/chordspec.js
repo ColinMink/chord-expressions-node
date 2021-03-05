@@ -1,17 +1,11 @@
 const chord = require('../../index.js').Chord;
-console.log(chord);
-/*
-it("",function(){
 
-});
-*/
 describe("Chord suite",function(){
 
     it("Recognizes basic triads",function(){
 
         let ch = chord.chordFromNotation("D");
         expect(ch.quality.triad.value).toBe("major");
-
         ch = chord.chordFromNotation("Em");
         expect(ch.quality.triad.value).toBe("minor");
 
@@ -106,11 +100,11 @@ describe("Chord suite",function(){
 
         ch = chord.chordFromNotation("Dm-maj7");
         expect(ch.quality.extension.value).toBe("maj7");
-        expect(ch.quality.triad.value).toBe("m");
+        expect(ch.quality.triad.value).toBe("minor");
 
         ch = chord.chordFromNotation("Dm6");
         expect(ch.quality.extension.value).toBe("6");
-        expect(ch.quality.triad.value).toBe("m");
+        expect(ch.quality.triad.value).toBe("minor");
 
         ch = chord.chordFromNotation("D#dim-maj11");
         expect(ch.quality.extension.value).toBe("maj11");
@@ -118,28 +112,28 @@ describe("Chord suite",function(){
 
         ch = chord.chordFromNotation("D+7");
         expect(ch.quality.extension.value).toBe("7");
-        expect(ch.quality.triad.value).toBe("+");
+        expect(ch.quality.triad.value).toBe("aug");
 
         // also accepts aug
         ch = chord.chordFromNotation("Daug7");
         expect(ch.quality.extension.value).toBe("7");
-        expect(ch.quality.triad.value).toBe("+");
+        expect(ch.quality.triad.value).toBe("aug");
 
         // dash is required between aug and maj(n)
         ch = chord.chordFromNotation("Daug-maj7");
         expect(ch.quality.extension.value).toBe("maj7");
-        expect(ch.quality.triad.value).toBe("+");
+        expect(ch.quality.triad.value).toBe("aug");
 
         ch = chord.chordFromNotation("D+6");
         expect(ch.quality.extension.value).toBe("6");
-        expect(ch.quality.triad.value).toBe("+");
+        expect(ch.quality.triad.value).toBe("aug");
 
         ch = chord.chordFromNotation("Dmaj7");
         expect(ch.quality.extension.value).toBe("maj7");
         expect(ch.quality.triad.value).toBe("major");
 
         ch = chord.chordFromNotation("Ddim9");
-        expect(ch.quality.extension.value).toBe("9");
+        expect(ch.quality.extension.value).toBe("dim9");
         expect(ch.quality.triad.value).toBe("dim");
 
         ch = chord.chordFromNotation("Dmaj11sus2");
@@ -148,7 +142,7 @@ describe("Chord suite",function(){
 
         // dim Seven 1,b3,b5,bb7
         ch = chord.chordFromNotation("Ddim7");
-        expect(ch.quality.extension.value).toBe("7");
+        expect(ch.quality.extension.value).toBe("dim7");
         expect(ch.quality.triad.value).toBe("dim");
 
         // dim Seven 1,b3,b5,bb7
@@ -198,7 +192,7 @@ describe("Chord suite",function(){
         // Root note is always the first note in the chord symbol as it's fundamental
         expect(ch.rootNote.name).toBe("D");
         // The note after the slash is the Bass note (lowest tone in the chord)
-        expect(ch.baseNote.name).toBe("B");
+        expect(ch.bassNote.name).toBe("B");
 
         ch = chord.chordFromNotation("F#maj7/C#");
         expect(ch.quality.extension.value).toBe("maj7");
@@ -206,14 +200,14 @@ describe("Chord suite",function(){
         // Root note is always the first note in the chord symbol as it's fundamental
         expect(ch.rootNote.name).toBe("F#");
         // The note after the slash is the Bass note (lowest tone in the chord)
-        expect(ch.baseNote.name).toBe("C#");
+        expect(ch.bassNote.name).toBe("C#");
 
         ch = chord.chordFromNotation("Esus2/F#");
         expect(ch.quality.triad.value).toBe("sus2");
         // Root note is always the first note in the chord symbol as it's fundamental
         expect(ch.rootNote.name).toBe("E");
         // The note after the slash is the Bass note (lowest tone in the chord)
-        expect(ch.baseNote.name).toBe("F#");
+        expect(ch.bassNote.name).toBe("F#");
 
     });
 
@@ -272,7 +266,7 @@ describe("Chord suite",function(){
         expect(ch.hasNote("A")).toBe(false);
 
         // Looks for '5' and 'b's it
-        let ch = chord.chordFromNotation("F#m-maj11#9");
+        ch = chord.chordFromNotation("F#m-maj11#9");
         expect(ch.quality.triad.value).toBe("minor");
         expect(ch.quality.extension.value).toBe("maj11");
         // the #9

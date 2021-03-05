@@ -30,6 +30,7 @@ class Blueprint {
     this.sym = source.sym;
     this.intervals = source.intervals;
     this.capabilities = source.capabilities; // capabilities should always be passed in
+    this.category = source.category;
     this.activeAlterations = source.activeAlterations || new Alterations();
 
     /* blueprint.base is used to preserve the blueprint we started with (before any alterations)
@@ -51,6 +52,7 @@ class Blueprint {
           sym: this.sym,
           intervals: [...this.intervals],
           capabilities: this.capabilities.copy(),
+          category: this.category,
           activeAlterations: this.activeAlterations.copy(),
           base: this.base
       };
@@ -92,16 +94,16 @@ class Blueprint {
   createModified(intSymbol) {
       const copy = this.copy();
 
-      console.log("blueprint.createModified()");
-      console.log(copy.capabilities);
+      //console.log("blueprint.createModified()");
+      //console.log(copy.capabilities);
 
       replaceTheModifiedPureTone();
       //  removeThisModFromCapabilities();
       copy.capabilities.removeExactMod(intSymbol);
-      console.log(copy.capabilities);
+      //console.log(copy.capabilities);
       // removeAssociatedAddFromCapabilities();
       copy.capabilities.add = copy.capabilities.removeAddedTonesForMod(intSymbol); //TODO: remove addedTones for mod
-      console.log(copy.capabilities);
+      //console.log(copy.capabilities);
       // removeAssociatedModsFromCapabilities();
       copy.capabilities.mod = copy.capabilities.removeAssociatedModsForMod(intSymbol);
       copy.addToActiveModList(intSymbol)
@@ -166,7 +168,7 @@ class Blueprint {
       // generate a string for mods, wrapping in () if empty base quality notation
       const mods = !blueprint.isModified() ? "" : (() => {
           const modStr = blueprint.activeAlterations.mod.join();
-          console.log(blueprint.base); // TODO: BUG HERE. is blueprint.base not an obj?
+          //console.log(blueprint.base); // TODO: BUG HERE. is blueprint.base not an obj?
           return blueprint.baseNotationIsBlank() ? `(${modStr})` : modStr;
       })();
 
@@ -311,7 +313,7 @@ class Capabilities {
 
   appendPureAddTone(interval) {
      // You pass "b5" and a 5 gets added
-     console.log(this);
+     //console.log(this);
       const list = [...this.add];
       const pureInterval = Interval.Notation.removeAccidentals(interval);
       if (!list.find(add => add !== pureInterval)) {
@@ -409,7 +411,7 @@ class Chord {
       this.root = Note.fromName(note);
       this.name = `${this.root.name} ${bp.name}`;
       this.sym = `${this.root.name}${bp.sym}`;
-
+      this.category = bp.category;
       //this.notes = Chord.generateNotes(this.root, bp.intervals);
       this.notes = this.generateNotes();
 
@@ -421,22 +423,23 @@ class Chord {
       //   where each list item is an interval symbol string
       this.capabilities = bp.capabilities.copy();
 
-      console.log("chord created (NO ALTERATIONS GENERATED YET)");
+      //console.log("chord created (NO ALTERATIONS GENERATED YET)");
         //breakpoint
       //temp for data dumping // NOTE MAKE SURE TO CLEAR OUT my_file.text FIRST SINCE THIS APPENDS!
+      /*
       if (this.root.name === "A" && this.blueprint.base.name === "Major") {
           const fs = require('fs');
 
           const stream = fs.createWriteStream("my_file.txt");
           const t = this.toQuickJSON().concat(",\n\n");
-          console.log("d");
+          //console.log("d");
           fs.appendFileSync('my_file.txt', t, function (err) {
               if (err) throw err;
               chords.forEach(chord => stream.appendFile(chord.toQuickJSON().concat(",\n\n")));
           });
 
        }
-
+       */
        // Use blueprint.capabilities to generate an alteration object '{add:[],mod:[]}'
        //   where each list item is a chord object of one alteration step away from this chord
 
@@ -498,6 +501,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Major",
     sym: "",
     intervals: ["3", "5"],
+    category: "Triad",
     capabilities: {
         mod: ["b5"],
         add: ["9", "11", "b9", "#9", "#11", "b13"]
@@ -507,6 +511,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Six",
     sym: "6",
     intervals: ["3", "5", "6"],
+    category: "Six",
     capabilities: {
         mod: ["b5"],
         add: ["9", "11", "b9", "#9", "#11", "b13"]
@@ -516,6 +521,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Seven",
     sym: "7",
     intervals: ["3", "5", "b7"],
+    category: "Seven",
     capabilities: {
         mod: ["b5"],
         add: ["11", "13", "b9", "#9", "#11", "b13"],
@@ -525,6 +531,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Nine",
     sym: "9",
     intervals: ["3", "5", "b7", "9"],
+    category: "Nine",
     capabilities: {
         mod: ["b5"],
         add: ["13", "#11", "b13"]
@@ -534,6 +541,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Eleven",
     sym: "11",
     intervals: ["3", "5", "b7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b5", "b9", "#9"],
         add: ["b13"]
@@ -543,6 +551,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Thirteen",
     sym: "13",
     intervals: ["3", "5", "b7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b5", "b9", "#9", "#11"],
         add: []
@@ -552,6 +561,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Major Seven",
     sym: "maj7",
     intervals: ["3", "5", "7"],
+    category: "Seven",
     capabilities: {
         mod: ["b5"],
         add: ["11", "13", "b9", "#9", "#11", "b13"]
@@ -561,6 +571,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Major Nine",
     sym: "maj9",
     intervals: ["3", "5", "7", "9"],
+    category: "Nine",
     capabilities: {
         mod: ["b5"],
         add: ["13", "#11", "b13"]
@@ -570,6 +581,7 @@ const MAJOR_BLUEPRINTS = [{
     name: "Major Eleven",
     sym: "maj11",
     intervals: ["3", "5", "7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b5", "b9", "#9"],
         add: ["b13"]
@@ -579,16 +591,18 @@ const MAJOR_BLUEPRINTS = [{
     name: "Major Thirteen",
     sym: "maj13",
     intervals: ["3", "5", "7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b5", "b9", "#9", "#11"],
         add: [],
     }
 }];
-
+ 
 const MINOR_BLUEPRINTS = [{
     name: "Minor",
     sym: "m",
     intervals: ["b3", "5"],
+    category: "Triad",
     capabilities: {
         mod: [],
         add: ["9", "11", "b9", "#11", "b13"],
@@ -598,6 +612,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Six",
     sym: "m6",
     intervals: ["b3", "5", "6"],
+    category: "Six",
     capabilities: {
         mod: [],
         add: ["9", "11", "b9", "#11", "b13"]
@@ -607,6 +622,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Seven",
     sym: "m7",
     intervals: ["b3", "5", "b7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13", "b9", "#11", "b13"]
@@ -616,6 +632,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Nine",
     sym: "m9",
     intervals: ["b3", "5", "b7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13", "#11", "b13"]
@@ -625,6 +642,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Eleven",
     sym: "m11",
     intervals: ["b3", "5", "b7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9"],
         add: ["b13"]
@@ -634,6 +652,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Thirteen",
     sym: "m13",
     intervals: ["b3", "5", "b7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "b11", "#11"],
         add: []
@@ -643,6 +662,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Major Seven",
     sym: "m-maj7",
     intervals: ["b3", "5", "7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13", "b9", "#11", "b13"]
@@ -652,6 +672,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Major Nine",
     sym: "m-maj9",
     intervals: ["b3", "5", "7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13", "#11", "b13"]
@@ -661,6 +682,7 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Major Eleven",
     sym: "m-maj11",
     intervals: ["b3", "5", "7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9"],
         add: ["b13"]
@@ -670,16 +692,18 @@ const MINOR_BLUEPRINTS = [{
     name: "Minor Major Thirteen",
     sym: "m-maj13",
     intervals: ["b3", "5", "7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "b11", "#11"],
         add: []
     }
     }];
-
+ 
 const SUSPENDED_BLUEPRINTS = [{
     name: "Suspended Two",
     sym: "sus2",
     intervals: ["2", "5"],
+    category: "Triad",
     capabilities: {
         mod: ["b5"],
         add: ["11"],
@@ -689,6 +713,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Six Suspended Two",
     sym: "6sus2",
     intervals: ["2", "5", "6"],
+    category: "Six",
     capabilities: {
         mod: ["b5"],
         add: ["11"]
@@ -698,6 +723,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Seven Suspended Two",
     sym: "7sus2",
     intervals: ["2", "5", "b7"],
+    category: "Seven",
     capabilities: {
         mod: ["b5"],
         add: ["11", "13"]
@@ -707,6 +733,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Nine Suspended Two",
     sym: "9sus2",
     intervals: ["2", "5", "b7", "9"],
+    category: "Nine",
     capabilities: {
         mod: ["b5"],
         add: ["13"]
@@ -716,6 +743,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Eleven Suspended Two",
     sym: "11sus2",
     intervals: ["2", "5", "b7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b5", "b9", "#9"],
         add: []
@@ -725,6 +753,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Thirteen Suspended Two",
     sym: "13sus2",
     intervals: ["2", "5", "b7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b5", "b9", "#9", "b11", "#11"],
         add: []
@@ -734,6 +763,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Seven Suspended Two",
     sym: "maj7sus2",
     intervals: ["2", "5", "7"],
+    category: "Seven",
     capabilities: {
         mod: ["b5"],
         add: ["11", "13"]
@@ -743,6 +773,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Nine Suspended Two",
     sym: "maj9sus2",
     intervals: ["2", "5", "7", "9"],
+    category: "Nine",
     capabilities: {
         mod: ["b5"],
         add: ["13"]
@@ -752,6 +783,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Eleven Suspended Two",
     sym: "maj11sus2",
     intervals: ["2", "5", "7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b5", "b9", "#9"],
         add: []
@@ -761,6 +793,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Thirteen Suspended Two",
     sym: "maj13sus2",
     intervals: ["2", "5", "7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "#9", "b11", "#11"],
         add: []
@@ -770,6 +803,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Suspended Four",
     sym: "sus4",
     intervals: ["4", "5"],
+    category: "Triad",
     capabilities: {
         mod: ["b5"],
         add: ["9"],
@@ -779,6 +813,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Six Suspended Four",
     sym: "6sus4",
     intervals: ["4", "5", "6"],
+    category: "Six",
     capabilities: {
         mod: ["b5"],
         add: ["9"]
@@ -788,6 +823,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Minor Seven Suspended Four",
     sym: "7sus4",
     intervals: ["4", "5", "b7"],
+    category: "Seven",
     capabilities: {
         mod: ["b5"],
         add: ["9", "13"]
@@ -797,6 +833,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Nine Suspended Four",
     sym: "9sus4",
     intervals: ["4", "5", "b7", "9"],
+    category: "Nine",
     capabilities: {
         mod: ["b5"],
         add: ["13"]
@@ -806,6 +843,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Eleven Suspended Four",
     sym: "11sus4",
     intervals: ["4", "5", "b7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b5", "b9", "#9"],
         add: []
@@ -815,6 +853,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Thirteen Suspended Four",
     sym: "13sus4",
     intervals: ["4", "5", "b7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b5", "b9", "#9", "b11", "#11"],
         add: []
@@ -824,6 +863,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Seven Suspended Four",
     sym: "maj7sus4",
     intervals: ["4", "5", "7"],
+    category: "Seven",
     capabilities: {
         mod: ["b5"],
         add: ["9", "13"]
@@ -833,6 +873,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Nine Suspended Four",
     sym: "maj9sus4",
     intervals: ["4", "5", "7", "9"],
+    category: "Nine",
     capabilities: {
         mod: ["b5"],
         add: ["13"]
@@ -842,6 +883,7 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Eleven Suspended Four",
     sym: "maj11sus4",
     intervals: ["4", "5", "7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9", "#9"],
         add: []
@@ -851,16 +893,18 @@ const SUSPENDED_BLUEPRINTS = [{
     name: "Major Thirteen Suspended Four",
     sym: "maj13sus4",
     intervals: ["4", "5", "7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b5", "b9", "#9", "b11", "#11"],
         add: []
     }
 }];
-
+ 
 const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished",
     sym: "dim",
     intervals: ["b3", "b5"],
+    category: "Triad",
     capabilities: {
         mod: [],
         add: ["9", "11"],
@@ -870,6 +914,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Seven",
     sym: "dim7",
     intervals: ["b3", "b5", "bb7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13"]
@@ -879,6 +924,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Nine",
     sym: "dim9",
     intervals: ["b3", "b5", "bb7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13"]
@@ -888,6 +934,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Eleven",
     sym: "dim11",
     intervals: ["b3", "b5", "bb7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9"],
         add: []
@@ -897,6 +944,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Thirteen",
     sym: "dim13",
     intervals: ["b3", "b5", "bb7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "b11"],
         add: []
@@ -904,8 +952,9 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Seven",
-    sym: "�7",
+    sym: "ø7",
     intervals: ["b3", "b5", "b7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13"]
@@ -913,8 +962,9 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Nine",
-    sym: "�9",
+    sym: "ø9",
     intervals: ["b3", "b5", "b7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13"]
@@ -922,8 +972,9 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Eleven",
-    sym: "�11",
+    sym: "ø11",
     intervals: ["b3", "b5", "b7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9"],
         add: []
@@ -931,8 +982,9 @@ const DIMINISHED_BLUEPRINTS = [{
 },
 {
     name: "Half-Diminished Thirteen",
-    sym: "�13",
+    sym: "ø13",
     intervals: ["b3", "b5", "b7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "b11",],
         add: []
@@ -942,6 +994,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Major Seven",
     sym: "dim-maj7",
     intervals: ["b3", "b5", "7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13"]
@@ -951,6 +1004,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Major Nine",
     sym: "dim-maj9",
     intervals: ["b3", "b5", "7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13"]
@@ -960,6 +1014,7 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Major Eleven",
     sym: "dim-maj11",
     intervals: ["b3", "b5", "7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9"],
         add: []
@@ -969,17 +1024,19 @@ const DIMINISHED_BLUEPRINTS = [{
     name: "Diminished Major Thirteen",
     sym: "dim-maj13",
     intervals: ["b3", "b5", "7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "b11"],
         add: []
     }
 }];
-
+ 
 // TODO: maybe Blueprints() takes array and returns blueprint objects;
 const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented",
     sym: "aug",
     intervals: ["3", "#5"],
+    category: "Triad",
     capabilities: {
         mod: [],
         add: ["9", "11"],
@@ -989,6 +1046,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Six",
     sym: "aug6",
     intervals: ["3", "#5", "6"],
+    category: "Six",
     capabilities: {
         mod: [],
         add: ["9", "11"]
@@ -998,6 +1056,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Seven",
     sym: "aug7",
     intervals: ["3", "5", "b7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13"]
@@ -1007,6 +1066,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Nine",
     sym: "aug9",
     intervals: ["3", "#5", "b7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13"]
@@ -1016,6 +1076,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Eleven",
     sym: "aug11",
     intervals: ["3", "#5", "b7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9", "#9"],
         add: []
@@ -1025,6 +1086,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Thirteen",
     sym: "aug13",
     intervals: ["3", "#5", "b7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "#9", "b11", "#11"],
         add: []
@@ -1034,6 +1096,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Major Seven",
     sym: "aug-maj7",
     intervals: ["3", "#5", "7"],
+    category: "Seven",
     capabilities: {
         mod: [],
         add: ["11", "13"]
@@ -1043,6 +1106,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Major Nine",
     sym: "aug-maj9",
     intervals: ["3", "#5", "7", "9"],
+    category: "Nine",
     capabilities: {
         mod: [],
         add: ["13"]
@@ -1052,6 +1116,7 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Major Eleven",
     sym: "aug-maj11",
     intervals: ["3", "#5", "7", "9", "11"],
+    category: "Eleven",
     capabilities: {
         mod: ["b9", "#9"],
         add: []
@@ -1061,12 +1126,12 @@ const AUGMENTED_BLUEPRINTS = [{
     name: "Augmented Major Thirteen",
     sym: "aug-maj13",
     intervals: ["3", "#5", "7", "9", "11", "13"],
+    category: "Thirteen",
     capabilities: {
         mod: ["b9", "#9", "b11", "#11"],
         add: []
     }
 }];
-
 
 function chordsFromBlueprints(note, blueprints) {
     const bps = blueprints.map(bp => {
@@ -1089,13 +1154,16 @@ function allChordsFromBlueprints(blueprints) {
 
 
 
+function generateChords (){
+    return allChordsFromBlueprints(MAJOR_BLUEPRINTS
+        .concat(MINOR_BLUEPRINTS)
+        .concat(SUSPENDED_BLUEPRINTS)
+        .concat(DIMINISHED_BLUEPRINTS)
+        .concat(AUGMENTED_BLUEPRINTS)
+    );
+}
 
-const chords = allChordsFromBlueprints(MAJOR_BLUEPRINTS
-    .concat(MINOR_BLUEPRINTS)
-    .concat(SUSPENDED_BLUEPRINTS)
-    .concat(DIMINISHED_BLUEPRINTS)
-    .concat(AUGMENTED_BLUEPRINTS)
-);
+module.exports.generateChords = generateChords;
 
 
 
@@ -1108,5 +1176,5 @@ stream.once('open', function (fd) {
     stream.end();
 });*/
 
-console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
+////console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
 // JavaScript source code
