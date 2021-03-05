@@ -1,0 +1,2 @@
+{"name":"A Major (Flat Thirteen, Sharp Eleven, Sharp Nine, Flat Nine) (Add Eleven, Nine)","sym":"A(b13,#11,#9,b9)(add 11,9)","activeAlterations":{"add":["b13","#11","#9","b9","11","9"],"mod":[]},"capabilities":{"add":[],"mod":[]},"notes":[{"name":"A","value":0,"reference":{"name":"A","value":0}},{"name":"C#","value":4},{"name":"E","value":7},{"name":"F","value":8},{"name":"D#","value":6},{"name":"C","value":3},{"name":"A#","value":1},{"name":"D","value":5},{"name":"B","value":2}]},
+
