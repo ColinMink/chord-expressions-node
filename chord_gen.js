@@ -1,7 +1,7 @@
 "use strict";
 
-const Note = require('./lib/Note.js');
-const Interval = require('./lib/Interval.js');
+const Note = require('./lib/note.js');
+const Interval = require('./lib/interval.js');
 
 
 
