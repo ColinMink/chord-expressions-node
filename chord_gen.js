@@ -94,22 +94,14 @@ class Blueprint {
   createModified(intSymbol) {
       const copy = this.copy();
 
-      //console.log("blueprint.createModified()");
-      //console.log(copy.capabilities);
 
       replaceTheModifiedPureTone();
-      //  removeThisModFromCapabilities();
       copy.capabilities.removeExactMod(intSymbol);
-      //console.log(copy.capabilities);
-      // removeAssociatedAddFromCapabilities();
       copy.capabilities.add = copy.capabilities.removeAddedTonesForMod(intSymbol); //TODO: remove addedTones for mod
-      //console.log(copy.capabilities);
-      // removeAssociatedModsFromCapabilities();
+ 
       copy.capabilities.mod = copy.capabilities.removeAssociatedModsForMod(intSymbol);
       copy.addToActiveModList(intSymbol)
-      // appendNewPureAddToneCapability();
       copy.capabilities.add = copy.capabilities.appendPureAddTone(intSymbol);
-      //generateChordNameAndSymbol();
       copy.sym = copy.generateSymbol();
       copy.name = copy.generateName();
       return new Blueprint(copy);
@@ -423,29 +415,11 @@ class Chord {
       //   where each list item is an interval symbol string
       this.capabilities = bp.capabilities.copy();
 
-      //console.log("chord created (NO ALTERATIONS GENERATED YET)");
-        //breakpoint
-      //temp for data dumping // NOTE MAKE SURE TO CLEAR OUT my_file.text FIRST SINCE THIS APPENDS!
-      /*
-      if (this.root.name === "A" && this.blueprint.base.name === "Major") {
-          const fs = require('fs');
-
-          const stream = fs.createWriteStream("my_file.txt");
-          const t = this.toQuickJSON().concat(",\n\n");
-          //console.log("d");
-          fs.appendFileSync('my_file.txt', t, function (err) {
-              if (err) throw err;
-              chords.forEach(chord => stream.appendFile(chord.toQuickJSON().concat(",\n\n")));
-          });
-
-       }
-       */
+      
        // Use blueprint.capabilities to generate an alteration object '{add:[],mod:[]}'
        //   where each list item is a chord object of one alteration step away from this chord
 
        this.alteredChords = this.generateAlterations();
-
-       // Enter into database?
 
      }
 
