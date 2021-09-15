@@ -8,6 +8,7 @@
   },
   "main": "index",
   "scripts": {
+    "start": "node index.js",
     "build": "pegjs ./lib/resources/parser/note_list_parser.pegjs",
     "test": "jasmine"
   },

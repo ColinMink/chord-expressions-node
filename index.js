@@ -1,6 +1,6 @@
 "use strict";
 
-console.log("exporting modules");
+//console.log("exporting modules");
 
 module.exports = require('./lib/chord_expressions');
 module.exports.generateChords = require('./chord_gen.js').generateChords;
