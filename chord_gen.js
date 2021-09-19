@@ -4,7 +4,7 @@ const Note = require('./lib/note.js');
 const Interval = require('./lib/interval.js');
 
 
-
+console.log("ran");
 
 
 
@@ -157,11 +157,12 @@ class Blueprint {
       // generate strings that prefer adds with accidentals as part of the mod string
       blueprint.activeAlterations = blueprint.generateStringNormalizedAlterations();
 
-      // generate a string for mods, wrapping in () if empty base quality notation
+      // TODO: ????? generate a string for mods, wrapping in () if empty base quality notation
+      // (currently wraps () always)
       const mods = !blueprint.isModified() ? "" : (() => {
           const modStr = blueprint.activeAlterations.mod.join();
           //console.log(blueprint.base); // TODO: BUG HERE. is blueprint.base not an obj?
-          return blueprint.baseNotationIsBlank() ? `(${modStr})` : modStr;
+          return blueprint.baseNotationIsBlank() ? `(${modStr})` : `(${modStr})`;
       })();
 
       // generate a string for adds
