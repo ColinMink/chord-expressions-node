@@ -400,6 +400,8 @@ class Chord {
     constructor(note, blueprint) {
       const bp = blueprint.copy();
 
+      //If this.category !== "Edited", next nested chord category needs to be "Edited"
+
       this.blueprint = bp;
       this.root = Note.fromName(note);
       this.name = `${this.root.name} ${bp.name}`;
@@ -443,12 +445,14 @@ class Chord {
      // needs to be removed from capabilities.mod and capabilities.add
 
      createMod(intSymbol) {
-         const blueprint = this.blueprint.createModified(intSymbol);
+         const blueprint = this.blueprint.createModified(intSymbol).copy(); //the copy call might be unwarranted
+         if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
      }
 
      createAdd(intSymbol) {
-         const blueprint = this.blueprint.createAddedTone(intSymbol);
+         const blueprint = this.blueprint.createAddedTone(intSymbol).copy(); //the copy call might be unwarranted
+         if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
      }
 
