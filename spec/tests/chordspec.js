@@ -277,4 +277,21 @@ describe("Chord suite",function(){
 
 
     });
+
+    it("Check if the chord includes all entires in an array of strings where each string is a single note name",function(){
+        let ch = chord.chordFromNotation("C");
+        expect(ch.contains(['C','E','G'])).toBe(true);
+        expect(ch.contains(['C','E'])).toBe(true);
+        expect(ch.contains(['B'])).toBe(false);
+    });
+    it("Check if the chord includes at least one entires in an array of strings where each string is a single note name",function(){
+        let ch = chord.chordFromNotation("C");
+        expect(ch.hasAtLeastOne(['C','B','D'])).toBe(true);
+        expect(ch.hasAtLeastOne(['C'])).toBe(true);
+        expect(ch.hasAtLeastOne(['B','D'])).toBe(false);
+        
+
+    });
+
+
 });
