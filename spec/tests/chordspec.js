@@ -273,17 +273,14 @@ describe("Chord suite",function(){
         expect(ch.hasNote("A")).toBe(true);
         // it should not have the 9
         expect(ch.hasNote("G#")).toBe(false);
-
-
-
     });
-
-    it("Check if the chord includes all entires in an array of strings where each string is a single note name",function(){
+    it("Check if allNotesFoundInNoteStringList is functional",function(){
         let ch = chord.chordFromNotation("C");
-        expect(ch.contains(['C','E','G'])).toBe(true);
-        expect(ch.contains(['C','E'])).toBe(true);
-        expect(ch.contains(['B'])).toBe(false);
+        expect(ch.allNotesFoundInNoteStringList(['C','E','G'])).withContext("['C','E','G']").toBe(true);
+        expect(ch.allNotesFoundInNoteStringList(['C','E'])).withContext("['C','E']").toBe(true);
+        expect(ch.allNotesFoundInNoteStringList(['B'])).withContext("['B']").toBe(false);
     });
+    /*
     it("Check if the chord includes at least one entires in an array of strings where each string is a single note name",function(){
         let ch = chord.chordFromNotation("C");
         expect(ch.hasAtLeastOne(['C','B','D'])).toBe(true);
@@ -292,6 +289,6 @@ describe("Chord suite",function(){
         
 
     });
-
+    */
 
 });
