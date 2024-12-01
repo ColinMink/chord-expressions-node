@@ -277,6 +277,7 @@ describe("Chord suite",function(){
     it("Check if allNotesFoundInNoteStringList is functional",function(){
         let ch = chord.chordFromNotation("C");
         expect(ch.allNotesFoundInNoteStringList(['C','E','G'])).withContext("['C','E','G']").toBe(true);
+        expect(ch.allNotesFoundInNoteStringList(['C','E','G', "A"])).withContext("['C','E','G', 'A']").toBe(true);
         expect(ch.allNotesFoundInNoteStringList(['C','E'])).withContext("['C','E']").toBe(true);
         expect(ch.allNotesFoundInNoteStringList(['B'])).withContext("['B']").toBe(false);
     });
