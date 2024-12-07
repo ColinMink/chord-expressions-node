@@ -17,13 +17,17 @@ const noteNames = [
 
     function generateScales() {
         let results = [];
-        Object.entries(Modes).forEach(([mode, value]) => {
-            Object.entries(value.scales).forEach(([key, value]) => {
+        Object.entries(Modes).forEach(([scaleGroupID, scaleGroup]) => {
+            Object.entries(scaleGroup.scales).forEach(([scaleName, value]) => {
+
+                // build scale based on every root note
                 noteNames.forEach(note => {
-                    results.push(new Scale(note,mode,key));
+                    results.push(new Scale(note,scaleGroupID, scaleGroup.name, scaleName));
                 });
+                
             });
         });
         return results;
     }
+    generateScales();
     module.exports.generateScales = generateScales;
