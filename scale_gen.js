@@ -29,5 +29,5 @@ const noteNames = [
         });
         return results;
     }
-    generateScales();
+    //generateScales();
     module.exports.generateScales = generateScales;
