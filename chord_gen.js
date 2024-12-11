@@ -446,12 +446,25 @@ class Chord {
 
      createMod(intSymbol) {
          const blueprint = this.blueprint.createModified(intSymbol).copy(); //the copy call might be unwarranted
+         // TODO: how we handle 7#9->11#9 (pure extended tone add to an altered chord), look at this
+         //       11#9 is already being generated and being set in its own pure Eleven chord, createMod chain
+         //       so when we createMod and we are category "Eleven", or "Thirteen" AND the mod we are making is of the 9,11,or, 13 then KEEP OUR ORIGINAL CATEGORY
+         //       To a similiar purpose, when we createMod("b5") we should retain our old designation
          if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
      }
 
+     // NOTE with these two todos, this will make grabbing chords that are crafted "has mods or adds" not work. We arent doing this at all anyway.
+            // but if we wanted to do that, this would require adding a secondary category field so that, for instance, E7#9 could have a category of "Nine"
+            // and a secondCategory of "Crafted" instead. Everything generated with createMod or createOdd would automatically get this secondCategory "crafted"
+            // not sure this would be desired but here is the means.
+
      createAdd(intSymbol) {
          const blueprint = this.blueprint.createAddedTone(intSymbol).copy(); //the copy call might be unwarranted
+         // TODO: if we add a note that creates an unbroken chain, like #9 or b9 being added to something called "Seven", should get the "Nine" category
+         //       b11 or #11 to "Nine" should be "Eleven"
+         //       this means   7#9->7#9#11 would work flawlessly
+         
          if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
      }
@@ -1034,7 +1047,7 @@ const AUGMENTED_BLUEPRINTS = [{
 {
     name: "Augmented Seven",
     sym: "aug7",
-    intervals: ["3", "5", "b7"],
+    intervals: ["3", "#5", "b7"],
     category: "Seven",
     capabilities: {
         mod: [],
