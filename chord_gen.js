@@ -59,6 +59,114 @@ class Blueprint {
       return new Blueprint(copy);
   }
 
+  getCategoryFromUnbrokenChainIntervals() {
+    const sortedIntervals = Interval.Notation.List.sortByChordInterval(this.intervals);
+
+    let chaining = false;
+    let lastInterval;
+
+    for (let i = 0; i < sortedIntervals.length; i++) { 
+        const interval = sortedIntervals[i];
+        const thisInterval = Interval.removeAccidentals(interval);
+       let thisValueisChained;
+
+        switch(thisInterval) {
+            case "7":         //if it's 7 we start the chain. 
+                chaining = true;
+                lastInterval = thisInterval;
+                break;
+            case  "9":
+                thisValueIsChained = (lastInterval === "7");
+                if (!thisValueIsChained) {
+                    return false;
+                }
+                else { 
+                    lastInterval = thisInterval;
+                } 
+                break;
+            case "11":
+                thisValueIsChained = (lastInterval === "9");
+                if (!thisValueIsChained) {
+                    return false; 
+                }
+                else { 
+                    lastInterval = thisInterval;
+                }
+                break;
+            case "13":
+                thisValueIsChained = (lastInterval === "11");
+                if (!thisValueIsChained) {
+                    return false; 
+                }
+                else { 
+                    lastInterval = thisInterval;
+                } 
+                break;
+            default:
+                if (chaining) {return false;} 
+                chaining = false;
+        }
+   }
+
+   return chaining;
+
+  }
+
+  hasunBrokenExtensionIntervalChain() {
+    // this.intervals like ["b3", "b5", "7", "9", "#11"],
+    const sortedIntervals = Interval.Notation.List.sortByChordInterval(this.intervals);
+
+    let chaining = false;
+    let lastInterval;
+
+    for (let i = 0; i < sortedIntervals.length; i++) { 
+         const interval = sortedIntervals[i];
+         const thisInterval = Interval.removeAccidentals(interval);
+        let thisValueisChained;
+
+         switch(thisInterval) {
+             case "7":         //if it's 7 we start the chain. 
+                 chaining = true;
+                 lastInterval = thisInterval;
+                 break;
+             case  "9":
+                 thisValueIsChained = (lastInterval === "7");
+                 if (!thisValueIsChained) {
+                     return false;
+                 }
+                 else { 
+                     lastInterval = thisInterval;
+                 } 
+                 break;
+             case "11":
+                 thisValueIsChained = (lastInterval === "9");
+                 if (!thisValueIsChained) {
+                     return false; 
+                 }
+                 else { 
+                     lastInterval = thisInterval;
+                 }
+                 break;
+             case "13":
+                 thisValueIsChained = (lastInterval === "11");
+                 if (!thisValueIsChained) {
+                     return false; 
+                 }
+                 else { 
+                     lastInterval = thisInterval;
+                 } 
+                 break;
+             default:
+                 if (chaining) {return false;} 
+                 chaining = false;
+         }
+    }
+
+    return chaining;
+
+  }
+
+
 
   createAddedTone(intSymbol) {
     const copy = this.copy();
@@ -450,6 +558,23 @@ class Chord {
          //       11#9 is already being generated and being set in its own pure Eleven chord, createMod chain
          //       so when we createMod and we are category "Eleven", or "Thirteen" AND the mod we are making is of the 9,11,or, 13 then KEEP OUR ORIGINAL CATEGORY
          //       To a similiar purpose, when we createMod("b5") we should retain our old designation
+
+        /* const theseCategories = ["Eleven", "Thirteen"];
+
+         if (theseCategories.includes(blueprint.category) && blueprint.hasunBrokenExtensionIntervalChain()) {
+             // KEEP OUR CATEGORY
+         } else if (intSymbol ==="b5") {  if we are flat-fiving a chord let it keep its category, its fundamentally the same category
+             // this is redeundant for 11 and 13 chords, but needed for you know b5, sus4(b5) 7b5, 9b5, maj7b5, etc. still a triad, still a triad, still a 7, still a 9, still a maj7
+             // KEEP OUR CATEGORY
+         } else {
+             blueprint.category = "Crafted";
+         }
+             
+         */
+
+    
+
+
          if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
      }
@@ -464,6 +589,30 @@ class Chord {
          // TODO: if we add a note that creates an unbroken chain, like #9 or b9 being added to something called "Seven", should get the "Nine" category
          //       b11 or #11 to "Nine" should be "Eleven"
          //       this means   7#9->7#9#11 would work flawlessly
+
+
+         /* //put this where needed
+
+        const theseCategories = ["Seven", "Nine", "Eleven", "Thirteen"];
+
+        if (theseCategories.includes(blueprint.category) && blueprint.hasunBrokenExtensionIntervalChain()) {
+            // mpre complicated than keeping our category, what category do we actually hit?
+            // make sure intervals are sorted, get the last one, because since it's an unbroken chain that is our new category
+
+            // const sortedIntervals = Interval.Notation.sortByChordInterval(blueprint.intervals);
+            // const lastInterval = sortedIntervals[sortedIntervals-1];
+            // const lastIntervalPurified = Interval.Notation.RemoveAccidentals(lastInterval);
+            // blueprint.category = Interval.Notation.numberToText(lastIntervalPurified);
+        } else {
+            blueprint.category = "Crafted"; like 9#13 crafted. Eadd11 crafted. E7add11 crafted. E7#11 crafted
+        }
+         
+         
+         
+         
+
+
+         */
          
          if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
