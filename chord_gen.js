@@ -111,18 +111,24 @@ class Blueprint {
    return chaining;
 
   }
-
+  // Answers: does this.intervals (like ["b3", "b5", "7", "9", "#11"]) contain an unbroken sequence of 7->9->11->13, partial or complete, when sorted
+  // Note, possible TODO: this will FAIL if there are multiples, like Em9(add #9) would not be recognized as a 9 chord. I think that's what we want. That should be a crafted chord.
+    // yeah, it's working how we want. We do NOT want Em9#9 to get pulled in a Nine chord query! Em9, sure. Em7#9, absolutely.
   hasunBrokenExtensionIntervalChain() {
-    // this.intervals like ["b3", "b5", "7", "9", "#11"],
     const sortedIntervals = Interval.Notation.List.sortByChordInterval(this.intervals);
+
+    // TODO maybe, if we want something like Emaj7sus4(Add Nine, Add Thirteen), and equivalent for sus2, 
+    // check if we have "2"->"5" or "4"->"5" intervals to count sus4 7->9->13 and sus2 7-11->13 as unbroken chain
+    // that whole sus2/sus4 extension situation is open question I will have to work through. I don't know the answer to question
+    // "What is best for user experience?" without thinking heavily about all the possibilities here
 
     let chaining = false;
     let lastInterval;
 
     for (let i = 0; i < sortedIntervals.length; i++) { 
          const interval = sortedIntervals[i];
-         const thisInterval = Interval.removeAccidentals(interval);
-        let thisValueisChained;
+         const thisInterval = Interval.Notation.removeAccidentals(interval);
+        let thisValueIsChained;
 
          switch(thisInterval) {
              case "7":         //if it's 7 we start the chain. 
@@ -359,6 +365,29 @@ class Blueprint {
     const addList = this.getActiveAddTonesTextList();
     return addList.join(", ");
   }
+
+  // for making sure extra notes aren't in there...like 9#11(add eleven) isn't a valid interval count for category, it has one more 
+  hasValidIntervalCountForCategory(category) {
+    // TODO (maybe), something vast and thoughtful may need to be happening here if we end up removing the redundant Notes/Intervals in blueprint/chords for sus2/sus4 chords
+    // i.e. 11sus4 and 13sus4 etc has a 4 and a 11 which is duplicate in this generation code, and 9sus2, 11sus2, 13sus4 etc have redundant 2 and 9
+    // these duplicates are just conveniently not making into the database because DB insert code ignores the duplicates
+    const categories = {
+        "Triad": 2,
+        "Six": 3,
+        "Seven": 4,
+        "Nine": 4,
+        "Eleven": 5,
+        "Thirteen": 6
+    };
+
+    const necessaryCount = categories[category];
+    if (!necessaryCount) {throw new Error(`bad category in hasValidIntervalCountForCategory(): ${category}`);}
+
+    // if there is for some strange reason a redundant "1" in here (1 is unison, so the same as the root the chord is building on, so unecessary) the universe has got your back
+    const intervals = this.intervals.filter(intervalStr => intervalStr !== "1");
+    return intervals.length === necessaryCount;
+ }
+
 }
 
 
@@ -559,23 +588,27 @@ class Chord {
          //       so when we createMod and we are category "Eleven", or "Thirteen" AND the mod we are making is of the 9,11,or, 13 then KEEP OUR ORIGINAL CATEGORY
          //       To a similiar purpose, when we createMod("b5") we should retain our old designation
 
-        /* const theseCategories = ["Eleven", "Thirteen"];
+        const theseCategories = ["Eleven", "Thirteen"];
 
          if (theseCategories.includes(blueprint.category) && blueprint.hasunBrokenExtensionIntervalChain()) {
-             // KEEP OUR CATEGORY
-         } else if (intSymbol ==="b5") {  if we are flat-fiving a chord let it keep its category, its fundamentally the same category
+             // do nothing and thereby keep current category
+             
+         } else if (intSymbol ==="b5") {  // b5 mod is fundamentally the same category of whatever we started with
              // this is redeundant for 11 and 13 chords, but needed for you know b5, sus4(b5) 7b5, 9b5, maj7b5, etc. still a triad, still a triad, still a 7, still a 9, still a maj7
-             // KEEP OUR CATEGORY
+             // do nothing and thereby keep current category
          } else {
+            // otherwise, because it cant be considered triad, seven, six, nine, eleven, or thirteen, give it a misc category for altereds (for querying this is important)
              blueprint.category = "Crafted";
          }
              
-         */
+         
 
     
 
 
-         if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
+         // if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
+         
+        
          return new Chord(this.root.name, blueprint);
      }
 
@@ -591,30 +624,58 @@ class Chord {
          //       this means   7#9->7#9#11 would work flawlessly
 
 
-         /* //put this where needed
-
         const theseCategories = ["Seven", "Nine", "Eleven", "Thirteen"];
 
-        if (theseCategories.includes(blueprint.category) && blueprint.hasunBrokenExtensionIntervalChain()) {
-            // mpre complicated than keeping our category, what category do we actually hit?
-            // make sure intervals are sorted, get the last one, because since it's an unbroken chain that is our new category
+        //console.log(blueprint);
+        //console.log("^blueprint");
 
-            // const sortedIntervals = Interval.Notation.sortByChordInterval(blueprint.intervals);
-            // const lastInterval = sortedIntervals[sortedIntervals-1];
-            // const lastIntervalPurified = Interval.Notation.RemoveAccidentals(lastInterval);
-            // blueprint.category = Interval.Notation.numberToText(lastIntervalPurified);
+        const blueprintOnlyHasAddsWithAccidentals = blueprint.activeAlterations.filter(intervalStr => !Interval.Notation.hasAccidental(intervalStr)).length === 0 ;
+
+        if (
+            theseCategories.includes(blueprint.category) && 
+            blueprint.hasunBrokenExtensionIntervalChain() && 
+            blueprint.hasValidIntervalCountForCategory(blueprint.category) /* &&
+            blueprintOnlyHasAddsWithAccidentals */
+        ) {
+            // calculate new category. For instance, 7(add 9) is an 11 chord, though maybe only modd should be!
+            // blueprintOnlyHasAddsWithAccidentals check above, but generate database first just to see whats going down
+            // so make sure blueprint.activeAlterations.add ONLY HAS A LIST OF INTERVALS WITH ACCIDENTALS! 
+            // 7#9#11 sure! 7#9(add 11) nahhhh...covered by 11#9 that is! dont worry about it!
+
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PICK UP HERE  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // DB is totally backed up
+            // - Wipe all rows in DB
+            // - run databaseBuilder.js. Might be some errors from when I edited that file. deal with any of those
+            // - look at data in app. make sure no big errors. There's probably a lot of (add etc) shit in the Chord Extensions list but look for the good shit like 7#9
+            // - wipe all rows in DB again
+            // - uncomment the blueprintOnlyHasAddsWithAccidentals check
+            // - uncomment FRAYSTE code (ctrl+f) and run chord_gen.js to see we got something maybe
+            // - if you do that last thing and it looks good, make sure to comment out FRAYSTE once again before next step
+            // - run dabaseBuilder.js again. Extensions should then only have shit like 7#9 and not stupid shit like 7(add 9)
+
+            const sortedIntervals = Interval.Notation.List.sortByChordInterval(blueprint.intervals);
+            const lastInterval = sortedIntervals[sortedIntervals.length-1];
+            const lastIntervalPurified = Interval.Notation.removeAccidentals(lastInterval);
+            // update category to new
+            blueprint.category = Interval.Notation.numberToText(lastIntervalPurified);
+
+             /* // DEBUG
+
+             const addChord = new Chord(this.root.name, blueprint);
+             if (addChord.activeAlterations.mod.length === 0 && addChord.activeAlterations.add.length === 1) {
+                console.log("\n\n\n\ ______________________ BEGIN");
+                console.log(`\n\n ${JSON.stringify(addChord)} \n\n`);
+                console.log("\n\n\n\ ______________________ END");
+             }  
+            
+             // DEBUG */
+
         } else {
-            blueprint.category = "Crafted"; like 9#13 crafted. Eadd11 crafted. E7add11 crafted. E7#11 crafted
+            blueprint.category = "Crafted"; // like 9#13 crafted. Eadd11 crafted. E7add11 crafted. E7#11 crafted
         }
          
          
-         
-         
-
-
-         */
-         
-         if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
+         //if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          return new Chord(this.root.name, blueprint);
      }
 
@@ -1307,15 +1368,18 @@ function generateChords (){
 module.exports.generateChords = generateChords;
 
 
+/* //FRAYSTE
 
-/*
 var fs = require('fs');
+let chords = generateChords();
 
 var stream = fs.createWriteStream("my_file.txt");
 stream.once('open', function (fd) {
-    chords.forEach(chord => stream.write(Chord.toQuickJSON(chord).concat(",\n\n")));
+    chords.forEach(chord => stream.write(chord.toQuickJSON().concat(",\n\n")));
     stream.end();
-});*/
+}); */
 
 ////console.log("Generated Chord count across 12 chromatic root notes: " + chords.length);
 // JavaScript source code
+
+
