@@ -42,6 +42,8 @@ class Blueprint {
         sym: this.sym,
         intervals: [...this.intervals]
     };
+
+    this.triadBase = source.triadBase;
     // TODO: Freeze blueprint.base and all items within if necessary ?
   }
 
@@ -54,7 +56,8 @@ class Blueprint {
           capabilities: this.capabilities.copy(),
           category: this.category,
           activeAlterations: this.activeAlterations.copy(),
-          base: this.base
+          base: this.base,
+          triadBase: this.triadBase
       };
       return new Blueprint(copy);
   }
@@ -109,66 +112,6 @@ class Blueprint {
    }
 
    return chaining;
-
-  }
-  // Answers: does this.intervals (like ["b3", "b5", "7", "9", "#11"]) contain an unbroken sequence of 7->9->11->13, partial or complete, when sorted
-  // Note, possible TODO: this will FAIL if there are multiples, like Em9(add #9) would not be recognized as a 9 chord. I think that's what we want. That should be a crafted chord.
-    // yeah, it's working how we want. We do NOT want Em9#9 to get pulled in a Nine chord query! Em9, sure. Em7#9, absolutely.
-  hasunBrokenExtensionIntervalChain() {
-    const sortedIntervals = Interval.Notation.List.sortByChordInterval(this.intervals);
-
-    // TODO maybe, if we want something like Emaj7sus4(Add Nine, Add Thirteen), and equivalent for sus2, 
-    // check if we have "2"->"5" or "4"->"5" intervals to count sus4 7->9->13 and sus2 7-11->13 as unbroken chain
-    // that whole sus2/sus4 extension situation is open question I will have to work through. I don't know the answer to question
-    // "What is best for user experience?" without thinking heavily about all the possibilities here
-
-    let chaining = false;
-    let lastInterval;
-
-    for (let i = 0; i < sortedIntervals.length; i++) { 
-         const interval = sortedIntervals[i];
-         const thisInterval = Interval.Notation.removeAccidentals(interval);
-        let thisValueIsChained;
-
-         switch(thisInterval) {
-             case "7":         //if it's 7 we start the chain. 
-                 chaining = true;
-                 lastInterval = thisInterval;
-                 break;
-             case  "9":
-                 thisValueIsChained = (lastInterval === "7");
-                 if (!thisValueIsChained) {
-                     return false;
-                 }
-                 else { 
-                     lastInterval = thisInterval;
-                 } 
-                 break;
-             case "11":
-                 thisValueIsChained = (lastInterval === "9");
-                 if (!thisValueIsChained) {
-                     return false; 
-                 }
-                 else { 
-                     lastInterval = thisInterval;
-                 }
-                 break;
-             case "13":
-                 thisValueIsChained = (lastInterval === "11");
-                 if (!thisValueIsChained) {
-                     return false; 
-                 }
-                 else { 
-                     lastInterval = thisInterval;
-                 } 
-                 break;
-             default:
-                 if (chaining) {return false;} 
-                 chaining = false;
-         }
-    }
-
-    return chaining;
 
   }
 
@@ -564,6 +507,8 @@ class Chord {
 
        this.alteredChords = this.generateAlterations();
 
+       this.triadBase = bp.triadBase;
+
      }
 
 
@@ -593,7 +538,7 @@ class Chord {
 
         const theseCategories = ["Eleven", "Thirteen"];
 
-         if (theseCategories.includes(blueprint.category) && blueprint.hasunBrokenExtensionIntervalChain()) {
+         if (theseCategories.includes(blueprint.category) && Interval.Notation.hasUnbrokenExtensionIntervalChain(blueprint.intervals)) {
              // do nothing and thereby keep current category
              
          } else if (intSymbol ==="b5") {  // b5 mod is fundamentally the same category of whatever we started with
@@ -603,13 +548,28 @@ class Chord {
             // otherwise, because it cant be considered triad, seven, six, nine, eleven, or thirteen, give it a misc category for altereds (for querying this is important)
              blueprint.category = "Crafted";
          }
-             
+
+         // Notation.Interval.
+
+       
+
+
+        // in case something happened to the base Triad somehow, calculate it
+        
+        blueprint.triadBase = Interval.Notation.List.getTriadName(blueprint.intervals);
+
+
+        const addChord = new Chord(this.root.name, blueprint);
+   
+        /*console.log("\n\n\n\n\n\n\n\n\n\n\n\n\ ______________________ BEGIN");
+        console.log(`\n\n ${JSON.stringify(addChord)} \n\n`);
+        console.log("\n\n\n\n\n\n\n\n\n\n\n\ ______________________ END");*/
+
+            
+        
          
 
     
-
-
-         // if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
          
         
          return new Chord(this.root.name, blueprint);
@@ -638,7 +598,7 @@ class Chord {
                     ${blueprint.category} \n`);
 
                 console.log(`theseCategories.includes(blueprint.category): ${theseCategories.includes(blueprint.category)}`);
-                console.log(`blueprint.hasunBrokenExtensionIntervalChain(): ${blueprint.hasunBrokenExtensionIntervalChain()}`);
+                console.log(`Interval.Notation.hasUnbrokenExtensionIntervalChain(blueprint.intervals): ${Interval.Notation.hasUnbrokenExtensionIntervalChain(blueprint.intervals)}`);
                 console.log(`blueprint.hasValidIntervalCountForPreviousCategory(blueprint.category): ${blueprint.hasValidIntervalCountForPreviousCategory(blueprint.category)}`);
                 console.log(`blueprintOnlyHasAddsWithAccidentals : ${blueprintOnlyHasAddsWithAccidentals }`);
              }*/
@@ -648,7 +608,7 @@ class Chord {
 
         if (
             theseCategories.includes(blueprint.category) && 
-            blueprint.hasunBrokenExtensionIntervalChain() && 
+            Interval.Notation.hasUnbrokenExtensionIntervalChain(blueprint.intervals) && 
             blueprint.hasValidIntervalCountForPreviousCategory(blueprint.category)  &&
             blueprintOnlyHasAddsWithAccidentals 
         ) {
@@ -682,6 +642,10 @@ class Chord {
         } else {
             blueprint.category = "Crafted"; // like 9#13 crafted. Eadd11 crafted. E7add11 crafted. E7#11 crafted
         }
+
+
+        // in case something happened to the base triad somehow, recalculate it
+        blueprint.triadBase = Interval.Notation.List.getTriadName(blueprint.intervals);
          
          
          //if (blueprint.category !== "Crafted") { blueprint.category = "Crafted";} //if it's Triad,Seven,Nine etc need to make sure its children are Crafted
@@ -1344,10 +1308,27 @@ const AUGMENTED_BLUEPRINTS = [{
     }
 }];
 
+
+// need to give them a triadBase which will be good for Extension queries in database
+MAJOR_BLUEPRINTS
+    .concat(MINOR_BLUEPRINTS)
+    .concat(SUSPENDED_BLUEPRINTS)
+    .concat(DIMINISHED_BLUEPRINTS)
+    .concat(AUGMENTED_BLUEPRINTS).forEach(blueprint => {
+        blueprint.triadBase = Interval.Notation.List.getTriadName(blueprint.intervals);
+});
+
+
+
 function chordsFromBlueprints(note, blueprints) {
+    // console.log(`\n\n\n\n\n\n${JSON.stringify(blueprints)}\n\n\n\n\n\n`);
     const bps = blueprints.map(bp => {
       bp.capabilities = new Capabilities(bp.capabilities);
       let b = new Blueprint(bp);
+
+      //console.log("chordsFromBlueprints");
+      //console.log(`\n\n\n\n\n\n${JSON.stringify(b)}\n\n\n\n\n`);
+      // has triadBase
       return b;
     });
     return bps.map(blueprint => {
@@ -1375,6 +1356,8 @@ function generateChords (){
 }
 
 module.exports.generateChords = generateChords;
+
+//console.log(SUSPENDED_BLUEPRINTS);
 
 
   
