@@ -274,6 +274,8 @@ describe("Chord suite",function(){
         // it should not have the 9
         expect(ch.hasNote("G#")).toBe(false);
     });
+
+
     it("Check if allNotesFoundInNoteStringList is functional",function(){
         let ch = chord.chordFromNotation("C");
         expect(ch.allNotesFoundInNoteStringList(['C','E','G'])).withContext("['C','E','G']").toBe(true);
@@ -281,6 +283,71 @@ describe("Chord suite",function(){
         expect(ch.allNotesFoundInNoteStringList(['C','E'])).withContext("['C','E']").toBe(true);
         expect(ch.allNotesFoundInNoteStringList(['B'])).withContext("['B']").toBe(false);
     });
+
+    it("allows you to mod a note in a chord with parentheses, or without parentheses if preceding part of symbol string is NOT a note",function(){
+        // Looks for '5' and 'b's it
+        // !!!!!! This works because there are parentheses used
+        let ch = chord.chordFromNotation("D7(b5)");
+        expect(ch.quality.triad.value).toBe("major");
+        expect(ch.quality.extension.value).toBe("7");
+        // the b5
+        expect(ch.hasNote("G#")).toBe(true);
+        // it should not have the 5
+        expect(ch.hasNote("A")).toBe(false);
+        // it should not have the 5. It has the 5 because it is mistakenly putting the b5 in add. It should go in mod because 5 already exists in D7
+        expect(ch.hasNote("A")).toBe(false);
+        // should be no add since "5" interval already exists in D7 "b5" should be mod
+        expect(ch.addList.length).toBe(0);
+        // should be in mod, 1 exactly
+        expect(ch.modList.length).toBe(1);
+        // since "5" already exists in D7, "b5" should go in modList
+        expect(ch.modList[0]).toBe("b5");
+
+    
+
+        // but this doesn't work because not working when parentheses not used 
+        ch = chord.chordFromNotation("D7b5");
+        console.log("\n\n\n\n\n------------------------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.log(JSON.stringify(ch));
+        console.log("\n\n\n\n\n------------------------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        expect(ch.quality.triad.value).toBe("major");
+        expect(ch.quality.extension.value).toBe("7");
+        // the b5
+        expect(ch.hasNote("G#")).toBe(true);
+        
+        // it should not have the 5. It has the 5 because it is mistakenly putting the b5 in add. It should go in mod because 5 already exists in D7
+        expect(ch.hasNote("A")).toBe(false);
+        // should be no add since "5" interval already exists in D7 "b5" should be mod
+        expect(ch.addList.length).toBe(0);
+        // should be in mod, 1 exactly
+        expect(ch.modList.length).toBe(1);
+        // since "5" already exists in D7, "b5" should go in modList
+        expect(ch.modList[0]).toBe("b5");
+
+    });
+
+    it("throws errors when given that isn't a triad",function(){
+        // We don't support Power Chords (like E5, D5, F#5, whatever) so the problem with [Note][Interval] like "Db5" or "E5" is that it's ambiguous:
+        // amgiguous as in: is Db5 a D chord with an altered b5? Or is it meant to be a DB chord with a 5? It's too ambiguous. so throw new Error("Ambiguous add or mod chord")
+        expect(() => chord.chordFromNotation("Db5")).toThrowError("Ambiguous add or mod chord");
+
+        // This is not ambiguous, it's clearly supposed to be a D5 power chord. But we don't support it. so throw new Error("Power Chords not supported")
+        expect(() => chord.chordFromNotation("D5")).toThrowError("Power Chords not supported");
+
+        // but remember that sometimes interval after root note makes sense, like 7,9,11,13,6 where we make D7, Db7, Db9, D9 (these are already working as expected so 
+        // dont break it)
+        expect(() => chord.chordFromNotation("Db7")).not.toThrow();
+
+    });
+
+    
+
+
+
+
+
+
+
     /*
     it("Check if the chord includes at least one entires in an array of strings where each string is a single note name",function(){
         let ch = chord.chordFromNotation("C");
