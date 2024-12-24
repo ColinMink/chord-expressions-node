@@ -367,21 +367,24 @@ class Blueprint {
   }
 
   // for making sure extra notes aren't in there...like 9#11(add eleven) isn't a valid interval count for category, it has one more 
-  hasValidIntervalCountForCategory(category) {
+  hasValidIntervalCountForPreviousCategory(category) {
+    // IMPORTANT NOTE THIS IS TO CHECK PREVIOUS CHORD CATEGORY! 
+    // THIS IS ONLY VALID FOR USE IN CREATEADD() METHOD!
+
     // TODO (maybe), something vast and thoughtful may need to be happening here if we end up removing the redundant Notes/Intervals in blueprint/chords for sus2/sus4 chords
     // i.e. 11sus4 and 13sus4 etc has a 4 and a 11 which is duplicate in this generation code, and 9sus2, 11sus2, 13sus4 etc have redundant 2 and 9
     // these duplicates are just conveniently not making into the database because DB insert code ignores the duplicates
     const categories = {
-        "Triad": 2,
-        "Six": 3,
-        "Seven": 4,
-        "Nine": 4,
-        "Eleven": 5,
-        "Thirteen": 6
+        "Triad": 3, // like ["3","5"] plus whatever intSymbol passed into createAdd()
+        "Six": 4, // like ["3","5", "6"] plus whatever intSymbol passed into createAdd()
+        "Seven": 4, // like ["3","5", "7"] plus whatever intSymbol passed into createAdd()
+        "Nine": 5, // like ["3","5", "7", "9"] plus whatever intSymbol passed into createAdd()
+        "Eleven": 6, // like ["3","5", "7", "9", "11"] plus whatever intSymbol passed into createAdd()
+        "Thirteen": 7 //  like ["3","5", "7", "9", "11", "13"] but thirteen has no adds anyway
     };
 
     const necessaryCount = categories[category];
-    if (!necessaryCount) {throw new Error(`bad category in hasValidIntervalCountForCategory(): ${category}`);}
+    if (!necessaryCount) {throw new Error(`bad category in hasValidIntervalCountForPreviousCategory(): ${category}`);}
 
     // if there is for some strange reason a redundant "1" in here (1 is unison, so the same as the root the chord is building on, so unecessary) the universe has got your back
     const intervals = this.intervals.filter(intervalStr => intervalStr !== "1");
@@ -626,16 +629,28 @@ class Chord {
 
         const theseCategories = ["Seven", "Nine", "Eleven", "Thirteen"];
 
-        //console.log(blueprint);
-        //console.log("^blueprint");
+             const blueprintOnlyHasAddsWithAccidentals = blueprint.activeAlterations.add.filter(intervalStr => !Interval.Notation.hasAccidental(intervalStr)).length === 0 ;
 
-        const blueprintOnlyHasAddsWithAccidentals = blueprint.activeAlterations.filter(intervalStr => !Interval.Notation.hasAccidental(intervalStr)).length === 0 ;
+
+             /*if (intSymbol === "#11" && blueprint.name === "Nine (Sharp Eleven)") {
+                console.log(`\n  ${blueprint.name} 
+                    ${blueprint.sym} 
+                    ${blueprint.category} \n`);
+
+                console.log(`theseCategories.includes(blueprint.category): ${theseCategories.includes(blueprint.category)}`);
+                console.log(`blueprint.hasunBrokenExtensionIntervalChain(): ${blueprint.hasunBrokenExtensionIntervalChain()}`);
+                console.log(`blueprint.hasValidIntervalCountForPreviousCategory(blueprint.category): ${blueprint.hasValidIntervalCountForPreviousCategory(blueprint.category)}`);
+                console.log(`blueprintOnlyHasAddsWithAccidentals : ${blueprintOnlyHasAddsWithAccidentals }`);
+             }*/
+
+
+        
 
         if (
             theseCategories.includes(blueprint.category) && 
             blueprint.hasunBrokenExtensionIntervalChain() && 
-            blueprint.hasValidIntervalCountForCategory(blueprint.category) /* &&
-            blueprintOnlyHasAddsWithAccidentals */
+            blueprint.hasValidIntervalCountForPreviousCategory(blueprint.category)  &&
+            blueprintOnlyHasAddsWithAccidentals 
         ) {
             // calculate new category. For instance, 7(add 9) is an 11 chord, though maybe only modd should be!
             // blueprintOnlyHasAddsWithAccidentals check above, but generate database first just to see whats going down
@@ -644,21 +659,15 @@ class Chord {
 
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PICK UP HERE  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // DB is totally backed up
-            // - Wipe all rows in DB
-            // - run databaseBuilder.js. Might be some errors from when I edited that file. deal with any of those
-            // - look at data in app. make sure no big errors. There's probably a lot of (add etc) shit in the Chord Extensions list but look for the good shit like 7#9
-            // - wipe all rows in DB again
-            // - uncomment the blueprintOnlyHasAddsWithAccidentals check
-            // - uncomment FRAYSTE code (ctrl+f) and run chord_gen.js to see we got something maybe
-            // - if you do that last thing and it looks good, make sure to comment out FRAYSTE once again before next step
             // - run dabaseBuilder.js again. Extensions should then only have shit like 7#9 and not stupid shit like 7(add 9)
+            // - hopefulle its all good
 
             const sortedIntervals = Interval.Notation.List.sortByChordInterval(blueprint.intervals);
             const lastInterval = sortedIntervals[sortedIntervals.length-1];
             const lastIntervalPurified = Interval.Notation.removeAccidentals(lastInterval);
             // update category to new
             blueprint.category = Interval.Notation.numberToText(lastIntervalPurified);
-
+            
              /* // DEBUG
 
              const addChord = new Chord(this.root.name, blueprint);
@@ -1119,7 +1128,7 @@ const DIMINISHED_BLUEPRINTS = [{
     category: "Seven",
     capabilities: {
         mod: [],
-        add: ["11", "13"]
+        add: ["b9", "11", "13"]
     }
 },
 {
@@ -1368,9 +1377,9 @@ function generateChords (){
 module.exports.generateChords = generateChords;
 
 
-/* //FRAYSTE
+  
 
-var fs = require('fs');
+/*var fs = require('fs');
 let chords = generateChords();
 
 var stream = fs.createWriteStream("my_file.txt");
